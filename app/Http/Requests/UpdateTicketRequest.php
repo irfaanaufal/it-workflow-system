@@ -20,6 +20,7 @@ class UpdateTicketRequest extends FormRequest
             'kondisi_lapangan' => ['required', 'string'],
             'keinginan_sistem' => ['required', 'string'],
             'dampak_positif'   => ['required', 'string'],
+            'system_ptsam_id'  => ['nullable', 'integer', 'exists:system_ptsam,id'],
         ];
     }
 
@@ -33,6 +34,13 @@ class UpdateTicketRequest extends FormRequest
                 $v->errors()->add(
                     'urgensi_laporan',
                     'Urgensi "Blocker" hanya dapat digunakan untuk kategori Fix Bug atau Maintenance.'
+                );
+            }
+
+            if (in_array($kategori, ['add feature', 'maintenance', 'fix bug']) && !$this->input('system_ptsam_id')) {
+                $v->errors()->add(
+                    'system_ptsam_id',
+                    'Sistem yang dilaporkan wajib dipilih untuk kategori Add Feature, Maintenance, atau Fix Bug.'
                 );
             }
         });

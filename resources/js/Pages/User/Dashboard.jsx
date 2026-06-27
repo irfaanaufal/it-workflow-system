@@ -130,7 +130,7 @@ export default function UserDashboard({ stats, statusCounts, recentTickets, time
             searchQuery={searchQuery}
             setSearchQuery={setSearchQuery}
         >
-            <Head title="Dashboard Saya" />
+            <Head title="Dashboard" />
 
             <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 py-4 lg:h-full lg:min-h-0 flex-1">
                 {/* Left Area (Line Chart & Stats) */}

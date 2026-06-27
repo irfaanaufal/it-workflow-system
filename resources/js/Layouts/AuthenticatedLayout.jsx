@@ -105,6 +105,8 @@ export default function AuthenticatedLayout({
     const [attachment, setAttachment] = useState(null);
     const [attachmentName, setAttachmentName] = useState('');
     const [loading, setLoading] = useState(false);
+    const [systemId, setSystemId] = useState('');
+    const [systems, setSystems] = useState([]);
 
     const [fidInput, setFidInput] = useState('');
     const [fidChecking, setFidChecking] = useState(false);
@@ -144,6 +146,16 @@ export default function AuthenticatedLayout({
     useEffect(() => {
         fetchNotifications();
     }, []);
+
+    useEffect(() => {
+        if (isCreateModalOpen) {
+            axios.get('/api/systems')
+                .then(res => setSystems(res.data))
+                .catch(console.error);
+        } else {
+            setSystemId('');
+        }
+    }, [isCreateModalOpen]);
 
     /* -- Single Echo subscription — also dispatches a window event for child pages -- */
     useEffect(() => {
@@ -243,6 +255,9 @@ export default function AuthenticatedLayout({
         fd.append('judul_laporan', judul); fd.append('kategori_laporan', kategori);
         fd.append('urgensi_laporan', urgensi); fd.append('kondisi_lapangan', kondisi);
         fd.append('keinginan_sistem', keinginan); fd.append('dampak_positif', dampak);
+        if (['add feature', 'maintenance', 'fix bug'].includes(kategori) && systemId) {
+            fd.append('system_ptsam_id', systemId);
+        }
         if (attachment) fd.append('attachment', attachment);
 
         axios.post('/api/tickets', fd, { headers: { 'Content-Type': 'multipart/form-data' } })
@@ -251,6 +266,7 @@ export default function AuthenticatedLayout({
                 setJudul(''); setKategori('new system'); setUrgensi('medium');
                 setKondisi(''); setKeinginan(''); setDampak('');
                 setAttachment(null); setAttachmentName('');
+                setSystemId('');
                 window.location.reload();
             })
             .catch(err => {
@@ -305,10 +321,16 @@ export default function AuthenticatedLayout({
                     {/* Left */}
                     <div className={`items-center gap-3 ${searchOpen ? 'hidden sm:flex' : 'flex'}`}>
                         <div>
-                            <h1 className="text-base md:text-lg font-bold text-gray-800 dark:text-zinc-100 tracking-tight leading-tight">
+                            {/* Desktop: Greeting */}
+                            <h1 className="hidden md:block text-base md:text-lg font-bold text-gray-800 dark:text-zinc-100 tracking-tight leading-tight">
                                 {greeting}, <span className="text-gray-900 dark:text-white font-extrabold">{user.name.split(' ')[0]}</span>
                             </h1>
-                            {title && <p className="text-[10px] text-gray-400 dark:text-zinc-500 font-semibold tracking-widest uppercase mt-0.5 hidden sm:block">{title}</p>}
+                            {title && <p className="text-[10px] text-gray-400 dark:text-zinc-500 font-semibold tracking-widest uppercase mt-0.5 hidden md:block">{title}</p>}
+
+                            {/* Mobile: Page Title instead of greeting */}
+                            <h1 className="block md:hidden text-base font-extrabold text-gray-900 dark:text-white tracking-tight leading-tight">
+                                {title || 'Dashboard'}
+                            </h1>
                         </div>
                     </div>
 
@@ -344,9 +366,18 @@ export default function AuthenticatedLayout({
                         {/* + Buat Laporan */}
                         {showCreateBtn && (
                             <button onClick={() => setIsCreateModalOpen(true)}
-                                className="h-9 md:h-10 px-3 md:px-4 rounded-xl bg-gray-900 dark:bg-zinc-100 text-white dark:text-zinc-950 hover:bg-black dark:hover:bg-white flex items-center gap-1.5 text-xs font-bold shadow-xs cursor-pointer transition">
+                                className="hidden md:flex h-9 md:h-10 px-3 md:px-4 rounded-xl bg-gray-900 dark:bg-zinc-100 text-white dark:text-zinc-950 hover:bg-black dark:hover:bg-white items-center gap-1.5 text-xs font-bold shadow-xs cursor-pointer transition">
                                 <span className="text-sm font-black leading-none">+</span>
-                                <span className="hidden sm:inline">Buat Laporan</span>
+                                <span>Buat Laporan</span>
+                            </button>
+                        )}
+
+                        {/* + Tambah Sistem */}
+                        {route().current('admin.systems.index') && (
+                            <button onClick={() => window.dispatchEvent(new CustomEvent('open-add-system-modal'))}
+                                className="hidden md:flex h-9 md:h-10 px-3 md:px-4 rounded-xl bg-gray-900 dark:bg-zinc-100 text-white dark:text-zinc-950 hover:bg-black dark:hover:bg-white items-center gap-1.5 text-xs font-bold shadow-xs cursor-pointer transition">
+                                <span className="text-sm font-black leading-none">+</span>
+                                <span>Tambah Sistem</span>
                             </button>
                         )}
 
@@ -496,10 +527,10 @@ export default function AuthenticatedLayout({
                             </div>
                         </div>
 
-                        {/* Standalone Filter Button (Only on History page, matches Image 2) */}
-                        {route().current('history') && (
+                        {/* Standalone Filter Button (Only on History or Systems page, matches Image 2) */}
+                        {(route().current('history') || route().current('admin.systems.index')) && (
                             <div className="relative" ref={filterRef}>
-                                <button onClick={() => setFilterOpen(p => !p)} title="Filter Kategori & Urgensi"
+                                <button onClick={() => setFilterOpen(p => !p)} title="Filter Data"
                                     className={`h-9 w-9 md:h-10 md:w-10 bg-white dark:bg-zinc-900 hover:bg-gray-100 dark:hover:bg-zinc-800 border border-gray-200 dark:border-zinc-800 rounded-xl flex items-center justify-center text-gray-500 dark:text-zinc-400 shadow-sm transition cursor-pointer shrink-0 ${filterOpen ? 'ring-2 ring-indigo-500/20 border-indigo-400' : ''}`}>
                                     <svg className="w-[18px] h-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                                         <path strokeLinecap="round" strokeLinejoin="round" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
@@ -507,30 +538,36 @@ export default function AuthenticatedLayout({
                                 </button>
                                 {filterOpen && (
                                     <div className="fixed left-4 right-4 top-[64px] sm:absolute sm:left-auto sm:right-0 sm:top-[calc(100%+10px)] sm:w-64 bg-white dark:bg-zinc-900 rounded-2xl border border-gray-200 dark:border-zinc-800 shadow-xl z-50 p-4 space-y-4">
+                                        {route().current('history') && (
+                                            <>
+                                                <div>
+                                                    <label className="block text-[9px] font-bold text-gray-400 dark:text-zinc-500 uppercase tracking-wider mb-1.5">Kategori</label>
+                                                    <select value={filterCategory} onChange={e => setFilterCategory(e.target.value)}
+                                                        className="w-full text-xs border border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-800 text-gray-800 dark:text-white rounded-lg px-2.5 py-1.5 focus:ring-1 focus:ring-indigo-500 outline-none cursor-pointer">
+                                                        <option value="all">Semua Kategori</option>
+                                                        <option value="new system">New System</option>
+                                                        <option value="website">Website</option>
+                                                        <option value="fix bug">Fix Bug</option>
+                                                        <option value="maintenance">Maintenance</option>
+                                                    </select>
+                                                </div>
+                                                <div>
+                                                    <label className="block text-[9px] font-bold text-gray-400 dark:text-zinc-500 uppercase tracking-wider mb-1.5">Urgensi</label>
+                                                    <select value={filterUrgency} onChange={e => setFilterUrgency(e.target.value)}
+                                                        className="w-full text-xs border border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-800 text-gray-800 dark:text-white rounded-lg px-2.5 py-1.5 focus:ring-1 focus:ring-indigo-500 outline-none cursor-pointer">
+                                                        <option value="all">Semua Urgensi</option>
+                                                        <option value="low">Low</option>
+                                                        <option value="medium">Medium</option>
+                                                        <option value="high">High</option>
+                                                        <option value="blocker">Blocker</option>
+                                                    </select>
+                                                </div>
+                                            </>
+                                        )}
                                         <div>
-                                            <label className="block text-[9px] font-bold text-gray-400 dark:text-zinc-500 uppercase tracking-wider mb-1.5">Kategori</label>
-                                            <select value={filterCategory} onChange={e => setFilterCategory(e.target.value)}
-                                                className="w-full text-xs border border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-800 text-gray-800 dark:text-white rounded-lg px-2.5 py-1.5 focus:ring-1 focus:ring-indigo-500 outline-none cursor-pointer">
-                                                <option value="all">Semua Kategori</option>
-                                                <option value="new system">New System</option>
-                                                <option value="website">Website</option>
-                                                <option value="fix bug">Fix Bug</option>
-                                                <option value="maintenance">Maintenance</option>
-                                            </select>
-                                        </div>
-                                        <div>
-                                            <label className="block text-[9px] font-bold text-gray-400 dark:text-zinc-500 uppercase tracking-wider mb-1.5">Urgensi</label>
-                                            <select value={filterUrgency} onChange={e => setFilterUrgency(e.target.value)}
-                                                className="w-full text-xs border border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-800 text-gray-800 dark:text-white rounded-lg px-2.5 py-1.5 focus:ring-1 focus:ring-indigo-500 outline-none cursor-pointer">
-                                                <option value="all">Semua Urgensi</option>
-                                                <option value="low">Low</option>
-                                                <option value="medium">Medium</option>
-                                                <option value="high">High</option>
-                                                <option value="blocker">Blocker</option>
-                                            </select>
-                                        </div>
-                                        <div>
-                                            <label className="block text-[9px] font-bold text-gray-400 dark:text-zinc-500 uppercase tracking-wider mb-1.5">Waktu Laporan</label>
+                                            <label className="block text-[9px] font-bold text-gray-400 dark:text-zinc-500 uppercase tracking-wider mb-1.5">
+                                                {route().current('admin.systems.index') ? 'Waktu Registrasi' : 'Waktu Laporan'}
+                                            </label>
                                             <select value={dateRangeType} onChange={e => {
                                                 const type = e.target.value;
                                                 setDateRangeType(type);
@@ -580,7 +617,7 @@ export default function AuthenticatedLayout({
                             </div>
                         )}
 
-                        {/* Mobile Search, Notif & Hamburger */}
+                        {/* Mobile Search & Hamburger */}
                         <div className={`sm:hidden flex items-center gap-2 ${searchOpen ? 'hidden' : 'flex'}`}>
                             {/* Mobile Search Button */}
                             {showSearch && (
@@ -591,57 +628,15 @@ export default function AuthenticatedLayout({
                                 </HeaderBtn>
                             )}
 
-                            {/* Mobile Notification Button */}
-                            <div className="relative" ref={mobileNotifRef}>
-                                <HeaderBtn onClick={() => { setNotifOpen(p => !p); setSearchOpen(false); setSettingsOpen(false); }} title="Notifikasi" active={notifOpen} flat={false}>
-                                    <svg className={ICON} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                                    </svg>
-                                    {unreadCount > 0 && (
-                                        <span className="absolute -top-0.5 -right-0.5 h-4 w-4 flex items-center justify-center bg-rose-500 text-white text-[9px] font-extrabold rounded-full ring-2 ring-white dark:ring-zinc-900">
-                                            {unreadCount > 9 ? '9+' : unreadCount}
-                                        </span>
-                                    )}
-                                </HeaderBtn>
-
-                                {/* Mobile Notif Dropdown */}
-                                {notifOpen && (
-                                    <div className="fixed left-4 right-4 top-[64px] sm:absolute sm:left-auto sm:right-0 sm:top-[calc(100%+10px)] sm:w-80 bg-white dark:bg-zinc-900 rounded-2xl border border-gray-200 dark:border-zinc-800 shadow-xl z-50 overflow-hidden">
-                                        <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-zinc-800">
-                                            <span className="text-sm font-bold text-gray-800 dark:text-zinc-100">Notifikasi</span>
-                                            {notifications.length > 0 && (
-                                                <button onClick={markAllRead} className="text-[10px] font-bold text-indigo-500 hover:text-indigo-700 dark:text-indigo-400 cursor-pointer transition">Tandai semua</button>
-                                            )}
-                                        </div>
-                                        <div className="max-h-72 overflow-y-auto">
-                                            {notifications.length === 0 ? (
-                                                <div className="py-8 text-center">
-                                                    <svg className="w-8 h-8 text-gray-300 dark:text-zinc-700 mx-auto mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
-                                                        <path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                                                    </svg>
-                                                    <p className="text-xs text-gray-400 dark:text-zinc-500 font-semibold">Belum ada notifikasi</p>
-                                                </div>
-                                            ) : notifications.map(n => (
-                                                <div key={n.id} className={`flex items-start gap-3 px-4 py-3 border-b border-gray-50 dark:border-zinc-800/60 last:border-0 transition ${!n.read ? 'bg-indigo-50/40 dark:bg-indigo-950/10' : ''}`}>
-                                                    <span className={`mt-1.5 w-2 h-2 rounded-full shrink-0 ${notifDot(n.status)}`} />
-                                                    <div className="flex-1 min-w-0">
-                                                        <p className="text-xs text-gray-700 dark:text-zinc-300 leading-snug">{n.msg}</p>
-                                                        <p className="text-[10px] text-gray-400 dark:text-zinc-500 mt-0.5">{n.time.toLocaleString('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</p>
-                                                    </div>
-                                                    {!n.read && <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 shrink-0 mt-2" />}
-                                                </div>
-                                            ))}
-                                        </div>
-                                    </div>
-                                )}
-                            </div>
-
-                            {/* Mobile Hamburger Menu Button (placed on the right of the notification button) */}
+                            {/* Mobile Hamburger Menu Button */}
                             <button onClick={() => setMobileSidebarOpen(true)}
-                                className="h-9 w-9 flex items-center justify-center rounded-xl bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 text-gray-500 dark:text-zinc-400 shadow-sm cursor-pointer transition shrink-0 active:scale-95">
+                                className="h-9 w-9 flex items-center justify-center rounded-xl bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 text-gray-500 dark:text-zinc-400 shadow-sm cursor-pointer transition shrink-0 active:scale-95 relative">
                                 <svg className={ICON} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
                                     <path strokeLinecap="round" strokeLinejoin="round" d="M4 6h16M4 12h16M4 18h16" />
                                 </svg>
+                                {unreadCount > 0 && (
+                                    <span className="absolute top-1.5 right-1.5 h-2 w-2 bg-rose-500 rounded-full ring-1 ring-white dark:ring-zinc-900" />
+                                )}
                             </button>
                         </div>
 
@@ -667,7 +662,11 @@ export default function AuthenticatedLayout({
                 <div className="p-6 md:p-8 max-h-[90vh] overflow-y-auto bg-white dark:bg-zinc-950 rounded-2xl">
                     <div className="flex justify-between items-center mb-5 pb-4 border-b border-gray-100 dark:border-zinc-800">
                         <h3 className="text-lg font-extrabold text-gray-900 dark:text-white">Buat Laporan Baru</h3>
-                        <button onClick={() => setIsCreateModalOpen(false)} className="text-gray-400 dark:text-zinc-500 hover:text-gray-700 dark:hover:text-zinc-200 text-2xl font-bold cursor-pointer leading-none">&times;</button>
+                        <button onClick={() => setIsCreateModalOpen(false)} className="text-gray-400 dark:text-zinc-500 hover:text-gray-700 dark:hover:text-zinc-200 transition cursor-pointer">
+                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
                     </div>
                     <form onSubmit={handleCreateTicket} className="space-y-4">
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -710,6 +709,19 @@ export default function AuthenticatedLayout({
                                 {!['fix bug', 'maintenance'].includes(kategori) && <p className="text-[10px] text-gray-400 dark:text-zinc-600 mt-1">Blocker hanya untuk Fix Bug / Maintenance.</p>}
                             </div>
                         </div>
+                        {/* Sistem dropdown */}
+                        {['add feature', 'maintenance', 'fix bug'].includes(kategori) && (
+                            <div className="animate-fadeIn">
+                                <label className="block text-[10px] font-bold text-gray-600 dark:text-zinc-300 uppercase tracking-wider mb-1.5">Sistem yang Dilaporkan</label>
+                                <select value={systemId} onChange={e => setSystemId(e.target.value)} required
+                                    className="w-full text-sm border border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-gray-900 dark:text-white rounded-xl py-2.5 px-4 focus:ring-2 focus:ring-indigo-500/40 outline-none transition cursor-pointer">
+                                    <option value="">-- Pilih Sistem --</option>
+                                    {systems.map(sys => (
+                                        <option key={sys.id} value={sys.id}>{sys.nama_sistem}</option>
+                                    ))}
+                                </select>
+                            </div>
+                        )}
                         {[
                             { label: 'Kondisi di lapangan saat ini?', val: kondisi, set: setKondisi, ph: 'Ketik kondisi...' },
                             { label: 'Apa yang Anda ingin sistem lakukan?', val: keinginan, set: setKeinginan, ph: 'Ketik keinginan sistem...' },
@@ -800,6 +812,35 @@ export default function AuthenticatedLayout({
                     </div>
                 </div>
             </Modal>
+
+            {/* Floating Action Button (FAB) for Mobile only */}
+            <div className="md:hidden fixed bottom-6 right-6 z-40 flex flex-col gap-3">
+                {/* FAB for Buat Laporan */}
+                {showCreateBtn && (
+                    <button
+                        onClick={() => setIsCreateModalOpen(true)}
+                        className="w-12 h-12 rounded-full bg-[#7a7a7a] dark:bg-zinc-800 text-white flex items-center justify-center shadow-lg hover:scale-105 transition active:scale-95 cursor-pointer"
+                        title="Buat Laporan"
+                    >
+                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                        </svg>
+                    </button>
+                )}
+
+                {/* FAB for Tambah Sistem */}
+                {route().current('admin.systems.index') && (
+                    <button
+                        onClick={() => window.dispatchEvent(new CustomEvent('open-add-system-modal'))}
+                        className="w-12 h-12 rounded-full bg-[#7a7a7a] dark:bg-zinc-800 text-white flex items-center justify-center shadow-lg hover:scale-105 transition active:scale-95 cursor-pointer"
+                        title="Tambah Sistem"
+                    >
+                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                        </svg>
+                    </button>
+                )}
+            </div>
         </div>
     );
 }
@@ -809,9 +850,8 @@ function HeaderBtn({ onClick, title, active, children, flat }) {
     if (flat) {
         return (
             <button onClick={onClick} title={title} aria-pressed={active}
-                className={`relative flex items-center justify-center transition cursor-pointer shrink-0 text-gray-500 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-white active:scale-95 duration-150 ${
-                    active ? 'text-indigo-600 dark:text-indigo-400 scale-110' : ''
-                }`}>
+                className={`relative flex items-center justify-center transition cursor-pointer shrink-0 text-gray-500 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-white active:scale-95 duration-150 ${active ? 'text-indigo-600 dark:text-indigo-400 scale-110' : ''
+                    }`}>
                 {children}
             </button>
         );

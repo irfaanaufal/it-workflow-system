@@ -199,6 +199,14 @@ Route::middleware('auth')->group(function () {
         })->name('admin.ticket-detail');
     });
 
+    // Super Admin System CRUD
+    Route::middleware('superadmin')->group(function () {
+        Route::get('/admin/systems', [\App\Http\Controllers\SystemPtsamController::class, 'index'])->name('admin.systems.index');
+        Route::post('/admin/systems', [\App\Http\Controllers\SystemPtsamController::class, 'store'])->name('admin.systems.store');
+        Route::patch('/admin/systems/{id}', [\App\Http\Controllers\SystemPtsamController::class, 'update'])->name('admin.systems.update');
+        Route::delete('/admin/systems/{id}', [\App\Http\Controllers\SystemPtsamController::class, 'destroy'])->name('admin.systems.destroy');
+    });
+
     // API Routes running under the 'web' middleware group (session/auth booted)
     Route::prefix('api')->group(function () {
         // Regular users & IT Admin can create and list tickets
@@ -207,6 +215,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/my-tickets', [TicketController::class, 'myTickets']);
         Route::get('/notifications', [LogNotifikasiController::class, 'index']);
         Route::patch('/notifications/read-all', [LogNotifikasiController::class, 'markAllRead']);
+        Route::get('/systems', [\App\Http\Controllers\SystemPtsamController::class, 'apiIndex']);
 
         // Protected routes for IT Admins only (placed BEFORE wildcard {id} routes)
         Route::middleware('admin.it')->group(function () {

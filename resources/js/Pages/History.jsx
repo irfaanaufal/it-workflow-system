@@ -4,12 +4,12 @@ import { Head, Link } from '@inertiajs/react';
 import { getCategoryStyles } from '@/Utils/ticketHelpers';
 
 const STATUS_MAP = {
-    inbox:       { label: 'Antrean',         cls: 'bg-gray-100 text-gray-600 dark:bg-zinc-800 dark:text-zinc-400 border-gray-200 dark:border-zinc-700' },
-    review:      { label: 'Review',          cls: 'bg-amber-50 text-amber-700 dark:bg-amber-950/30 dark:text-amber-400 border-amber-200 dark:border-amber-900' },
-    to_do:       { label: 'To Do',           cls: 'bg-sky-50 text-sky-700 dark:bg-sky-950/30 dark:text-sky-400 border-sky-200 dark:border-sky-900' },
-    in_progress: { label: 'In Progress',     cls: 'bg-indigo-50 text-indigo-700 dark:bg-indigo-950/30 dark:text-indigo-400 border-indigo-200 dark:border-indigo-900' },
-    testing:     { label: 'Testing',         cls: 'bg-violet-50 text-violet-700 dark:bg-violet-950/30 dark:text-violet-400 border-violet-200 dark:border-violet-900' },
-    approved:    { label: 'Selesai ✔',       cls: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400 border-emerald-200 dark:border-emerald-900' },
+    inbox: { label: 'Antrean', cls: 'bg-gray-100 text-gray-600 dark:bg-zinc-800 dark:text-zinc-400 border-gray-200 dark:border-zinc-700' },
+    review: { label: 'Review', cls: 'bg-amber-50 text-amber-700 dark:bg-amber-950/30 dark:text-amber-400 border-amber-200 dark:border-amber-900' },
+    to_do: { label: 'To Do', cls: 'bg-sky-50 text-sky-700 dark:bg-sky-950/30 dark:text-sky-400 border-sky-200 dark:border-sky-900' },
+    in_progress: { label: 'In Progress', cls: 'bg-indigo-50 text-indigo-700 dark:bg-indigo-950/30 dark:text-indigo-400 border-indigo-200 dark:border-indigo-900' },
+    testing: { label: 'Testing', cls: 'bg-violet-50 text-violet-700 dark:bg-violet-950/30 dark:text-violet-400 border-violet-200 dark:border-violet-900' },
+    approved: { label: 'Selesai ✔', cls: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400 border-emerald-200 dark:border-emerald-900' },
 };
 
 export default function History({ tickets }) {
@@ -100,12 +100,6 @@ export default function History({ tickets }) {
 
             <div className="py-4">
                 <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-gray-200 dark:border-zinc-800 shadow-sm overflow-hidden">
-
-                    <div className="px-5 py-4 border-b border-gray-100 dark:border-zinc-800">
-                        <h2 className="text-base font-bold text-gray-900 dark:text-white">Riwayat Laporan</h2>
-                        <p className="text-xs text-gray-500 dark:text-zinc-500 mt-0.5">Menampilkan tiket yang sudah approved.</p>
-                    </div>
-
                     {/* Mobile: card list */}
                     <div className="md:hidden divide-y divide-gray-100 dark:divide-zinc-800">
                         {filteredTickets.length === 0 ? (
@@ -148,7 +142,7 @@ export default function History({ tickets }) {
                         <table className="min-w-full divide-y divide-gray-100 dark:divide-zinc-800 text-left">
                             <thead className="bg-gray-50 dark:bg-zinc-950/50">
                                 <tr>
-                                    {['No','Nama Pelapor','Divisi','Judul','Kategori','Status','Tanggal','Aksi'].map(h => (
+                                    {['No', 'Nama Pelapor', 'Divisi', 'Judul', 'Kategori', 'Status', 'Tanggal', 'Aksi'].map(h => (
                                         <th key={h} className="px-5 py-3 text-[10px] font-bold text-gray-400 dark:text-zinc-500 uppercase tracking-widest">{h}</th>
                                     ))}
                                 </tr>

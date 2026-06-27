@@ -34,8 +34,8 @@ export default function Inbox() {
             const ticket = e.detail.ticket;
             if (ticket.status === 'inbox') {
                 setTickets(prev => {
-                    const newTickets = prev.some(t => t.id === ticket.id) 
-                        ? prev.map(t => t.id === ticket.id ? ticket : t) 
+                    const newTickets = prev.some(t => t.id === ticket.id)
+                        ? prev.map(t => t.id === ticket.id ? ticket : t)
                         : [ticket, ...prev];
                     return sortByUrgency(newTickets);
                 });
@@ -104,18 +104,30 @@ function InboxCard({ ticket, onTake, onDetail }) {
         <div className="flex flex-col rounded-2xl overflow-hidden border border-gray-200/70 dark:border-zinc-800 shadow-sm hover:shadow-md transition duration-200 bg-white dark:bg-zinc-900">
 
             {/* Pastel top */}
-            <div className={`p-4 flex flex-col gap-2 ${getCategoryStyles(ticket.kategori_laporan)}`}>
-                <div className="flex justify-between items-start gap-2">
-                    <h3 className="font-bold text-gray-950 text-sm leading-snug line-clamp-2 flex-1">
-                        {ticket.judul_laporan}
-                    </h3>
-                    <span className={`shrink-0 font-bold uppercase text-[8px] tracking-wide px-1.5 py-0.5 rounded ${getUrgencyBadgeStyles(ticket.urgensi_laporan)}`}>
-                        {ticket.urgensi_laporan}
-                    </span>
+            <div className={`p-4 flex flex-col justify-between h-[144px] ${getCategoryStyles(ticket.kategori_laporan)}`}>
+                <div>
+                    <div className="flex justify-between items-start gap-2">
+                        <h3 className="font-bold text-gray-950 text-sm leading-snug line-clamp-2 flex-1">
+                            {ticket.judul_laporan}
+                        </h3>
+                        <span className={`shrink-0 font-bold uppercase text-[8px] tracking-wide px-1.5 py-0.5 rounded ${getUrgencyBadgeStyles(ticket.urgensi_laporan)}`}>
+                            {ticket.urgensi_laporan}
+                        </span>
+                    </div>
+                    <p className="text-[11px] text-gray-700/80 line-clamp-2 leading-relaxed mt-1.5">
+                        {ticket.kondisi_lapangan}
+                    </p>
                 </div>
-                <p className="text-[11px] text-gray-700/80 line-clamp-3 leading-relaxed">
-                    {ticket.kondisi_lapangan}
-                </p>
+                <div className="flex items-center justify-between mt-1">
+                    <span className="text-[8px] font-extrabold px-1.5 py-0.5 rounded bg-white/70 text-gray-800 border border-gray-200/20 uppercase tracking-wide">
+                        {ticket.kategori_laporan}
+                    </span>
+                    {ticket.system_ptsam && (
+                        <span className="text-[8px] font-extrabold px-1.5 py-0.5 rounded bg-indigo-100/60 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border border-indigo-200/20 uppercase tracking-wide truncate max-w-[120px]" title={ticket.system_ptsam.nama_sistem}>
+                            {ticket.system_ptsam.nama_sistem}
+                        </span>
+                    )}
+                </div>
             </div>
 
             {/* White bottom */}

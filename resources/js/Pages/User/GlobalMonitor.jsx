@@ -56,8 +56,8 @@ export default function GlobalMonitor() {
         >
             <Head title="Global Monitor" />
 
-            <div className="py-4">
-                <div className="flex items-center justify-between mb-4">
+            <div className="py-4 flex-1 flex flex-col min-h-0">
+                <div className="flex items-center justify-between mb-4 shrink-0">
                     <div>
                         <h2 className="text-base font-bold text-gray-900 dark:text-white">Global Monitor</h2>
                         <p className="text-xs text-gray-500 dark:text-zinc-500 mt-0.5">Pantau progres tiket secara real-time. Tampilan hanya baca.</p>
@@ -68,7 +68,7 @@ export default function GlobalMonitor() {
                 </div>
 
                 {/* Horizontal scroll on mobile, 4-col grid on desktop */}
-                <div className="flex md:grid md:grid-cols-4 gap-4 overflow-x-auto pb-2 md:overflow-visible md:pb-0">
+                <div className="flex-1 min-h-0 flex md:grid md:grid-cols-4 gap-4 overflow-x-auto pb-2 md:overflow-visible md:pb-0 items-stretch">
                     {Object.entries(board).map(([colId, col]) => {
                         const filteredItems = col.items.filter(item => {
                             if (!searchQuery) return true;
@@ -83,7 +83,7 @@ export default function GlobalMonitor() {
                         });
                         return (
                             <div key={colId}
-                                className="flex-shrink-0 w-72 md:w-auto bg-gray-100/80 dark:bg-zinc-950 p-3 rounded-2xl flex flex-col min-h-[480px] border border-gray-200/60 dark:border-zinc-800/60">
+                                className="flex-shrink-0 w-[82vw] sm:w-72 md:w-auto bg-gray-100/80 dark:bg-zinc-950 p-3 rounded-2xl flex flex-col min-h-[calc(100vh-11rem)] md:min-h-0 md:h-full border border-gray-200/60 dark:border-zinc-800/60">
 
                                 {/* Column header */}
                                 <div className="flex justify-between items-center mb-3 pb-2 border-b border-gray-200 dark:border-zinc-800">
@@ -97,7 +97,7 @@ export default function GlobalMonitor() {
                                 </div>
 
                                 {/* Cards */}
-                                <div className="flex-1 space-y-3">
+                                <div className="flex-1 min-h-0 overflow-y-auto space-y-3 pr-1">
                                     {filteredItems.length === 0 ? (
                                         <div className="h-16 border-2 border-dashed border-gray-200 dark:border-zinc-800 rounded-xl flex items-center justify-center text-[10px] text-gray-400 dark:text-zinc-600">
                                             Kolom Kosong

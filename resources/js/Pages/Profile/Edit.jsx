@@ -14,7 +14,7 @@ export default function Edit({ mustVerifyEmail, status }) {
     const [avatarError, setAvatarError] = useState('');
     const fileInputRef = useRef();
 
-    /* â”€â”€ Avatar Upload â”€â”€ */
+    /* Avatar Upload */
     const handleAvatarChange = async (e) => {
         const file = e.target.files[0];
         if (!file) return;
@@ -70,8 +70,8 @@ export default function Edit({ mustVerifyEmail, status }) {
                                     {avatarUploading && (
                                         <div className="absolute inset-0 bg-black/50 rounded-lg flex items-center justify-center">
                                             <svg className="animate-spin h-6 w-6 text-white" fill="none" viewBox="0 0 24 24">
-                                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
-                                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                                             </svg>
                                         </div>
                                     )}
@@ -116,11 +116,10 @@ export default function Edit({ mustVerifyEmail, status }) {
                             <h2 className="text-lg md:text-xl font-bold text-gray-900 dark:text-white">{user.name}</h2>
                             <p className="text-sm text-gray-500 dark:text-zinc-400 mt-0.5">{user.email}</p>
                             <div className="flex items-center gap-2 mt-2">
-                                <span className={`text-[10px] font-black px-2.5 py-1 rounded-lg uppercase tracking-widest ${
-                                    user.is_it
-                                        ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-900/50'
-                                        : 'bg-gray-100 text-gray-600 dark:bg-zinc-800 dark:text-zinc-400 border border-gray-200 dark:border-zinc-700'
-                                }`}>
+                                <span className={`text-[10px] font-black px-2.5 py-1 rounded-lg uppercase tracking-widest ${user.is_it
+                                    ? 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-900/50'
+                                    : 'bg-gray-100 text-gray-600 dark:bg-zinc-800 dark:text-zinc-400 border border-gray-200 dark:border-zinc-700'
+                                    }`}>
                                     {user.is_it ? 'IT Staff' : 'Inputer'}
                                 </span>
                                 {user.divisi && (
@@ -162,10 +161,10 @@ export default function Edit({ mustVerifyEmail, status }) {
     );
 }
 
-/* â”€â”€â”€ Profile Info Form â”€â”€â”€ */
+/*Profile Info Form */
 function ProfileInfoForm({ user }) {
     const { data, setData, patch, errors, processing, recentlySuccessful } = useForm({
-        name:  user.name,
+        name: user.name,
         email: user.email,
     });
 
@@ -208,7 +207,7 @@ function ProfileInfoForm({ user }) {
                     </button>
                     <Transition show={recentlySuccessful} enter="transition ease-in-out" enterFrom="opacity-0" leave="transition ease-in-out" leaveTo="opacity-0">
                         <p className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
-                            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>
+                            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
                             Tersimpan.
                         </p>
                     </Transition>
@@ -218,11 +217,11 @@ function ProfileInfoForm({ user }) {
     );
 }
 
-/* â”€â”€â”€ Password Form â”€â”€â”€ */
+/*Password Form*/
 function PasswordForm() {
     const { data, setData, put, reset, errors, processing, recentlySuccessful } = useForm({
-        current_password:      '',
-        password:              '',
+        current_password: '',
+        password: '',
         password_confirmation: '',
     });
 
@@ -264,7 +263,7 @@ function PasswordForm() {
                     </button>
                     <Transition show={recentlySuccessful} enter="transition ease-in-out" enterFrom="opacity-0" leave="transition ease-in-out" leaveTo="opacity-0">
                         <p className="text-xs text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
-                            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>
+                            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>
                             Tersimpan.
                         </p>
                     </Transition>
@@ -274,14 +273,14 @@ function PasswordForm() {
     );
 }
 
-/* â”€â”€â”€ Employee Data (Read-only) â”€â”€â”€ */
+/*Employee Data (Read-only)*/
 function EmployeeDataCard({ user }) {
     const fields = [
         { label: 'FID / ID Karyawan', value: user.username || '-' },
-        { label: 'Role Akses',        value: user.role_name || '-' },
-        { label: 'Divisi',            value: user.divisi || '-' },
-        { label: 'Jabatan',           value: user.karyawan?.jabatan || '-' },
-        { label: 'Status Keaktifan',  value: user.karyawan?.status || '-' },
+        { label: 'Role Akses', value: user.role_name || '-' },
+        { label: 'Divisi', value: user.divisi || '-' },
+        { label: 'Jabatan', value: user.karyawan?.jabatan || '-' },
+        { label: 'Status Keaktifan', value: user.karyawan?.status || '-' },
     ];
 
     return (
@@ -305,12 +304,12 @@ function EmployeeDataCard({ user }) {
     );
 }
 
-/* â”€â”€â”€ Delete Account â”€â”€â”€ */
+/*Delete Account */
 function DeleteCard() {
-    const [confirm, setConfirm]   = useState(false);
+    const [confirm, setConfirm] = useState(false);
     const [password, setPassword] = useState('');
-    const [error, setError]       = useState('');
-    const [loading, setLoading]   = useState(false);
+    const [error, setError] = useState('');
+    const [loading, setLoading] = useState(false);
 
     const handleDelete = async (e) => {
         e.preventDefault();
@@ -325,53 +324,6 @@ function DeleteCard() {
             setLoading(false);
         }
     };
-
-    return (
-        <div className="bg-white dark:bg-zinc-950 rounded-lg border border-rose-200/60 dark:border-rose-900/30 shadow-sm p-5 md:p-6">
-            <div className="mb-5">
-                <h3 className="text-base font-extrabold text-rose-600 dark:text-rose-400">Hapus Akun</h3>
-                <p className="text-xs text-gray-500 dark:text-zinc-400 mt-1">
-                    Setelah dihapus, semua data akun tidak dapat dipulihkan.
-                </p>
-            </div>
-
-            {!confirm ? (
-                <button
-                    type="button"
-                    onClick={() => setConfirm(true)}
-                    className="bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/20 dark:hover:bg-rose-950/40 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-900/50 text-xs font-bold px-5 py-2.5 rounded-lg transition cursor-pointer"
-                >
-                    Hapus Akun Saya
-                </button>
-            ) : (
-                <form onSubmit={handleDelete} className="space-y-4 max-w-sm">
-                    <p className="text-xs text-rose-600 dark:text-rose-400 font-semibold bg-rose-50 dark:bg-rose-950/20 border border-rose-200 dark:border-rose-900/40 rounded-lg p-3">
-                        Masukkan password untuk konfirmasi penghapusan akun.
-                    </p>
-                    <input
-                        type="password"
-                        value={password}
-                        onChange={e => setPassword(e.target.value)}
-                        placeholder="Password"
-                        className="w-full text-sm border border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-gray-900 dark:text-white rounded-lg py-2.5 px-4 focus:ring-2 focus:ring-rose-400/40 outline-none transition"
-                        autoFocus
-                        required
-                    />
-                    {error && <p className="text-xs text-rose-600 dark:text-rose-400 font-semibold">{error}</p>}
-                    <div className="flex gap-3">
-                        <button type="button" onClick={() => { setConfirm(false); setPassword(''); setError(''); }}
-                            className="text-xs font-bold text-gray-500 dark:text-zinc-400 hover:text-gray-700 px-4 py-2.5 rounded-lg transition cursor-pointer">
-                            Batal
-                        </button>
-                        <button type="submit" disabled={loading}
-                            className="bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold px-5 py-2.5 rounded-lg transition disabled:opacity-60 cursor-pointer">
-                            {loading ? 'Menghapus...' : 'Ya, Hapus Akun'}
-                        </button>
-                    </div>
-                </form>
-            )}
-        </div>
-    );
 }
 
 /* â”€â”€â”€ Reusable Field wrapper â”€â”€â”€ */

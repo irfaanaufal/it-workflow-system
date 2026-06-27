@@ -306,6 +306,32 @@ export default function TicketDetail({ ticketId }) {
                                     {ticket.judul_laporan}
                                 </h2>
 
+                                {/* Alasan Revisi */}
+                                {ticket.revision_reason && (
+                                    <div className="mb-6 p-4 rounded-2xl bg-rose-500/10 border border-rose-500/25 text-rose-700 dark:text-rose-450">
+                                        <p className="text-[10px] font-extrabold uppercase tracking-widest text-rose-600 dark:text-rose-400 mb-1.5 flex items-center gap-1.5">
+                                            <svg className="w-4 h-4 shrink-0 text-rose-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                                                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                            </svg>
+                                            Alasan Revisi
+                                        </p>
+                                        <p className="text-xs font-semibold leading-relaxed whitespace-pre-wrap">{ticket.revision_reason}</p>
+                                    </div>
+                                )}
+
+                                {/* Feedback / Testimoni UAT */}
+                                {ticket.uat_feedback && (
+                                    <div className="mb-6 p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/25 text-emerald-700 dark:text-emerald-455">
+                                        <p className="text-[10px] font-extrabold uppercase tracking-widest text-emerald-600 dark:text-emerald-400 mb-1.5 flex items-center gap-1.5">
+                                            <svg className="w-4 h-4 shrink-0 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                                                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                            </svg>
+                                            Feedback / Testimoni UAT
+                                        </p>
+                                        <p className="text-xs font-semibold leading-relaxed whitespace-pre-wrap">{ticket.uat_feedback}</p>
+                                    </div>
+                                )}
+
                                 {/* Dynamic Details Fields */}
                                 <div className="space-y-5">
                                     {[
@@ -318,6 +344,29 @@ export default function TicketDetail({ ticketId }) {
                                             <p className="text-sm font-medium leading-relaxed whitespace-pre-wrap opacity-95">{f.value || '—'}</p>
                                         </div>
                                     ))}
+                                    {ticket.system_ptsam && (
+                                        <div>
+                                            <p className="text-[10px] font-extrabold opacity-70 uppercase tracking-wider mb-1">Sistem Terkait</p>
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-sm font-bold text-gray-900 dark:text-white">
+                                                    {ticket.system_ptsam.nama_sistem}
+                                                </span>
+                                                {ticket.system_ptsam.link_sistem && (
+                                                    <a
+                                                        href={ticket.system_ptsam.link_sistem}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="text-xs font-semibold text-indigo-500 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 underline inline-flex items-center gap-0.5"
+                                                    >
+                                                        Buka Sistem
+                                                        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                                                            <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                                        </svg>
+                                                    </a>
+                                                )}
+                                            </div>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
 

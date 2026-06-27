@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
 /**
@@ -14,6 +14,16 @@ export default function UatModal({ isOpen, onClose, ticketId, onApproved, onRevi
     const [reason, setReason]       = useState('');
     const [loading, setLoading]     = useState(false);
     const [error, setError]         = useState('');
+
+    useEffect(() => {
+        if (isOpen) {
+            setStep(initialStep);
+            setFeedback('');
+            setReason('');
+            setLoading(false);
+            setError('');
+        }
+    }, [isOpen, initialStep]);
 
     if (!isOpen) return null;
 

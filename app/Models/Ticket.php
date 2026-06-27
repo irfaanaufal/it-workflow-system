@@ -27,6 +27,7 @@ class Ticket extends Model
         'admin_it_id',
         'uat_feedback',
         'revision_reason',
+        'system_ptsam_id',
     ];
 
     /**
@@ -51,5 +52,13 @@ class Ticket extends Model
     public function checklists(): HasMany
     {
         return $this->hasMany(TicketChecklist::class, 'ticket_id');
+    }
+
+    /**
+     * Get the system associated with the ticket.
+     */
+    public function systemPtsam(): BelongsTo
+    {
+        return $this->belongsTo(SystemPtsam::class, 'system_ptsam_id', 'id');
     }
 }

@@ -6,10 +6,10 @@ import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, router } from '@inertiajs/react';
 
 const COLUMNS = {
-    review:      { name: 'Review',      dot: 'bg-amber-400' },
-    to_do:       { name: 'To Do',       dot: 'bg-sky-400' },
+    review: { name: 'Review', dot: 'bg-amber-400' },
+    to_do: { name: 'To Do', dot: 'bg-sky-400' },
     in_progress: { name: 'In Progress', dot: 'bg-indigo-500' },
-    testing:     { name: 'Testing',     dot: 'bg-violet-500' },
+    testing: { name: 'Testing', dot: 'bg-violet-500' },
 };
 
 const initBoard = () => {
@@ -86,11 +86,6 @@ export default function KanbanBoard() {
             <Head title="Kanban Board" />
 
             <div className="py-4 flex-1 flex flex-col min-h-0">
-                <div className="mb-4 shrink-0">
-                    <h2 className="text-base font-bold text-gray-900 dark:text-white">Kanban Board</h2>
-                    <p className="text-xs text-gray-500 dark:text-zinc-500 mt-0.5">Drag &amp; Drop kartu untuk memperbarui status tiket.</p>
-                </div>
-
                 {/* Horizontal scroll on mobile, 4-col grid on desktop */}
                 <DragDropContext onDragEnd={onDragEnd}>
                     <div className="flex-1 min-h-0 flex md:grid md:grid-cols-4 gap-4 overflow-x-auto pb-2 md:overflow-visible md:pb-0 items-stretch">

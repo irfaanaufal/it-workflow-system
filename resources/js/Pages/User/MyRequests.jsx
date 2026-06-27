@@ -86,35 +86,36 @@ export default function MyRequests() {
             <Head title="My Requests" />
 
             <div className="py-6 transition-colors duration-200">
-                <div className="bg-white dark:bg-zinc-950 p-6 rounded-3xl border border-gray-200/80 dark:border-zinc-800 shadow-sm">
-                    <div className="flex justify-between items-center mb-6">
-                        <div>
-                            <h2 className="text-lg font-bold text-gray-900 dark:text-white">Laporan Saya</h2>
-                            <p className="text-xs text-gray-500 dark:text-zinc-400 mt-1">
-                                Daftar tiket yang Anda kirimkan. Tiket di antrean masih bisa diedit.
-                            </p>
-                        </div>
-                    </div>
-
-                    {filteredTickets.length === 0 ? (
-                        <div className="py-12 text-center text-gray-400 dark:text-zinc-500 text-sm">
-                            {searchQuery ? 'Tidak ada tiket yang cocok dengan pencarian Anda.' : 'Anda belum membuat laporan apapun. Klik "+ Buat Laporan" di kanan atas.'}
-                        </div>
-                    ) : (
-                        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                            {filteredTickets.map(ticket => (
-                                <TicketCard
-                                    key={ticket.id}
-                                    ticket={ticket}
-                                    onUat={() => openUat(ticket)}
-                                    onDetail={() => openDetail(ticket)}
-                                    onEdit={() => openEdit(ticket)}
-                                    onDelete={() => handleDelete(ticket.id)}
-                                />
-                            ))}
-                        </div>
-                    )}
+                <div className="mb-6">
+                    <h2 className="text-xl font-extrabold text-gray-900 dark:text-white">Laporan Saya</h2>
+                    <p className="text-xs text-gray-500 dark:text-zinc-400 mt-1">
+                        Daftar tiket yang Anda kirimkan. Tiket di antrean masih bisa diedit.
+                    </p>
                 </div>
+
+                {filteredTickets.length === 0 ? (
+                    <div className="py-16 text-center bg-white dark:bg-zinc-900 rounded-3xl border border-gray-200 dark:border-zinc-800 shadow-sm animate-fadeIn">
+                        <svg className="w-10 h-10 text-gray-300 dark:text-zinc-700 mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+                        </svg>
+                        <p className="text-sm font-semibold text-gray-400 dark:text-zinc-650">
+                            {searchQuery ? 'Tidak ada tiket yang cocok dengan pencarian Anda.' : 'Anda belum membuat laporan apapun. Klik "+ Buat Laporan" di kanan atas.'}
+                        </p>
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-6 pt-2">
+                        {filteredTickets.map(ticket => (
+                            <TicketCard
+                                key={ticket.id}
+                                ticket={ticket}
+                                onUat={() => openUat(ticket)}
+                                onDetail={() => openDetail(ticket)}
+                                onEdit={() => openEdit(ticket)}
+                                onDelete={() => handleDelete(ticket.id)}
+                            />
+                        ))}
+                    </div>
+                )}
             </div>
 
             {/* UAT Modal */}
@@ -124,6 +125,7 @@ export default function MyRequests() {
                 ticketId={selectedTicket?.id}
                 onApproved={handleApproved}
                 onRevised={handleRevised}
+                initialStep={2}
             />
 
             {/* Edit Modal */}
@@ -157,6 +159,9 @@ function TicketCard({ ticket, onUat, onDetail, onEdit, onDelete }) {
 
     const handleTestingClick = () => {
         if (!readyToSubmit) {
+            if (ticket.system_ptsam?.link_sistem) {
+                window.open(ticket.system_ptsam.link_sistem, '_blank');
+            }
             setReadyToSubmit(true);
         } else {
             setReadyToSubmit(false);
@@ -168,12 +173,12 @@ function TicketCard({ ticket, onUat, onDetail, onEdit, onDelete }) {
         <div className="flex flex-col rounded-[20px] overflow-hidden border border-gray-200/60 dark:border-zinc-800 shadow-sm hover:shadow-md transition duration-200 bg-white dark:bg-zinc-900">
 
             {/* Top Pastel Section */}
-            <div className={`p-5 flex flex-col justify-between ${getCategoryStyles(ticket.kategori_laporan)}`} style={{ minHeight: '160px' }}>
+            <div className={`p-4 flex flex-col justify-between h-[144px] ${getCategoryStyles(ticket.kategori_laporan)}`}>
                 <div>
                     <h3 className="font-bold text-gray-950 text-sm leading-snug line-clamp-2">
                         {ticket.judul_laporan}
                     </h3>
-                    <p className="text-[11px] text-gray-700/90 mt-2 line-clamp-3 leading-relaxed">
+                    <p className="text-[11px] text-gray-700/85 mt-1.5 line-clamp-2 leading-relaxed">
                         {ticket.kondisi_lapangan}
                     </p>
                 </div>
@@ -181,9 +186,16 @@ function TicketCard({ ticket, onUat, onDetail, onEdit, onDelete }) {
                     <span className={`inline-block font-bold uppercase tracking-wider ${getUrgencyBadgeStyles(ticket.urgensi_laporan)}`}>
                         {ticket.urgensi_laporan}
                     </span>
-                    <span className="text-[9px] font-extrabold px-1.5 py-0.5 rounded bg-white/70 text-gray-800 border border-gray-200/20 uppercase">
-                        {ticket.kategori_laporan}
-                    </span>
+                    <div className="flex items-center gap-1">
+                        {ticket.system_ptsam && (
+                            <span className="text-[8px] font-extrabold px-1.5 py-0.5 rounded bg-indigo-100/60 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border border-indigo-200/20 uppercase tracking-wide truncate max-w-[80px]" title={ticket.system_ptsam.nama_sistem}>
+                                {ticket.system_ptsam.nama_sistem}
+                            </span>
+                        )}
+                        <span className="text-[8px] font-extrabold px-1.5 py-0.5 rounded bg-white/70 text-gray-800 border border-gray-200/20 uppercase tracking-wide">
+                            {ticket.kategori_laporan}
+                        </span>
+                    </div>
                 </div>
             </div>
 
@@ -200,6 +212,14 @@ function TicketCard({ ticket, onUat, onDetail, onEdit, onDelete }) {
                     </span>
                     <StatusBadge status={ticket.status} />
                 </div>
+
+                {/* Alasan Revisi */}
+                {ticket.status === 'review' && ticket.revision_reason && (
+                    <div className="p-2.5 rounded-xl bg-rose-50 dark:bg-rose-950/20 border border-rose-100 dark:border-rose-900/30 text-rose-700 dark:text-rose-450">
+                        <p className="text-[9px] font-extrabold text-rose-500 dark:text-rose-400 uppercase tracking-wider mb-0.5">⚠ Alasan Revisi</p>
+                        <p className="text-[10px] font-semibold leading-relaxed line-clamp-2">{ticket.revision_reason}</p>
+                    </div>
+                )}
 
                 {/* PIC IT — tampil setelah tiket di-take */}
                 <div className="flex items-center justify-between">
@@ -298,15 +318,26 @@ function EditTicketModal({ ticket, onClose, onSaved }) {
     const [kondisi, setKondisi] = useState(ticket.kondisi_lapangan);
     const [keinginan, setKeinginan] = useState(ticket.keinginan_sistem);
     const [dampak, setDampak] = useState(ticket.dampak_positif);
+    const [systemId, setSystemId] = useState(ticket.system_ptsam_id || '');
+    const [systems, setSystems] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
 
     const canBlocker = BLOCKER_CATEGORIES.includes(kategori);
 
+    React.useEffect(() => {
+        axios.get('/api/systems')
+            .then(res => setSystems(res.data))
+            .catch(console.error);
+    }, []);
+
     const handleKategoriChange = (val) => {
         setKategori(val);
         if (urgensi === 'blocker' && !BLOCKER_CATEGORIES.includes(val)) {
             setUrgensi('high');
+        }
+        if (!['add feature', 'maintenance', 'fix bug'].includes(val)) {
+            setSystemId('');
         }
     };
 
@@ -322,6 +353,7 @@ function EditTicketModal({ ticket, onClose, onSaved }) {
                 kondisi_lapangan: kondisi,
                 keinginan_sistem: keinginan,
                 dampak_positif: dampak,
+                system_ptsam_id: ['add feature', 'maintenance', 'fix bug'].includes(kategori) ? (systemId || null) : null,
             });
             onSaved(res.data.ticket);
             onClose();
@@ -401,6 +433,24 @@ function EditTicketModal({ ticket, onClose, onSaved }) {
                             )}
                         </div>
                     </div>
+
+                    {/* Sistem dropdown */}
+                    {['add feature', 'maintenance', 'fix bug'].includes(kategori) && (
+                        <div>
+                            <label className="block text-xs font-bold text-gray-600 dark:text-zinc-300 uppercase tracking-wider mb-1.5">Sistem yang Dilaporkan</label>
+                            <select
+                                value={systemId}
+                                onChange={e => setSystemId(e.target.value)}
+                                className="w-full text-sm border border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-gray-900 dark:text-white rounded-xl py-2.5 px-4 focus:ring-2 focus:ring-amber-400/40 outline-none transition cursor-pointer"
+                                required
+                            >
+                                <option value="">-- Pilih Sistem --</option>
+                                {systems.map(sys => (
+                                    <option key={sys.id} value={sys.id}>{sys.nama_sistem}</option>
+                                ))}
+                            </select>
+                        </div>
+                    )}
 
                     {/* Kondisi */}
                     <div>

@@ -20,7 +20,7 @@ class TicketController extends Controller
      */
     public function index(): JsonResponse
     {
-        $tickets = Ticket::with(['karyawan', 'adminIt', 'adminIt.user'])
+        $tickets = Ticket::with(['karyawan', 'adminIt', 'adminIt.user', 'systemPtsam'])
             ->orderBy('updated_at', 'desc')
             ->get();
 
@@ -48,6 +48,11 @@ class TicketController extends Controller
             $attachmentPath = $request->file('attachment')->store('attachments', 'public');
         }
 
+        $systemPtsamId = $validated['system_ptsam_id'] ?? null;
+        if ($validated['kategori_laporan'] === 'new system') {
+            $systemPtsamId = null;
+        }
+
         $ticket = Ticket::create([
             'karyawan_id' => $karyawan->id,
             'judul_laporan' => $validated['judul_laporan'],
@@ -58,6 +63,7 @@ class TicketController extends Controller
             'dampak_positif' => $validated['dampak_positif'],
             'attachment_path' => $attachmentPath,
             'status' => 'inbox',
+            'system_ptsam_id' => $systemPtsamId,
         ]);
 
         // Broadcast so admin IT receives a real-time notification.
@@ -85,10 +91,15 @@ class TicketController extends Controller
             return response()->json(['message' => 'Tiket hanya dapat diedit selama masih dalam antrean (Inbox).'], 400);
         }
 
-        $ticket->fill($request->validated());
+        $validated = $request->validated();
+        if ($validated['kategori_laporan'] === 'new system') {
+            $validated['system_ptsam_id'] = null;
+        }
+
+        $ticket->fill($validated);
         $ticket->save();
 
-        return response()->json(['message' => 'Tiket berhasil diperbarui.', 'ticket' => $ticket->load('karyawan')]);
+        return response()->json(['message' => 'Tiket berhasil diperbarui.', 'ticket' => $ticket->load(['karyawan', 'systemPtsam'])]);
     }
 
     /**
@@ -96,7 +107,7 @@ class TicketController extends Controller
      */
     public function getInbox(): JsonResponse
     {
-        $tickets = Ticket::with('karyawan')
+        $tickets = Ticket::with(['karyawan', 'systemPtsam'])
             ->where('status', 'inbox')
             ->orderBy('created_at', 'desc')
             ->get();
@@ -270,7 +281,7 @@ class TicketController extends Controller
             return response()->json([], 200);
         }
 
-        $tickets = Ticket::with(['karyawan', 'adminIt', 'adminIt.user'])
+        $tickets = Ticket::with(['karyawan', 'adminIt', 'adminIt.user', 'systemPtsam'])
             ->where('karyawan_id', $karyawan->id)
             ->orderBy('created_at', 'desc')
             ->get()
@@ -313,7 +324,7 @@ class TicketController extends Controller
      */
     public function show(Request $request, $id): JsonResponse
     {
-        $ticket = Ticket::with(['karyawan', 'adminIt', 'adminIt.user', 'checklists'])
+        $ticket = Ticket::with(['karyawan', 'adminIt', 'adminIt.user', 'checklists', 'systemPtsam'])
             ->findOrFail($id);
 
         $karyawan = $request->user()->karyawan;

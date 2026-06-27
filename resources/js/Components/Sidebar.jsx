@@ -4,9 +4,10 @@ import axios from 'axios';
 import AppLogo from '@/Components/AppLogo';
 
 export default function Sidebar({ mobileOpen = false, onMobileClose }) {
-    const user     = usePage().props.auth.user;
+    const user = usePage().props.auth.user;
+    console.log('Sidebar rendered. User object:', user);
     const [hovered, setHovered] = useState(false);
-    const isIT     = user.is_it === true;
+    const isIT = user.is_it === true;
     const expanded = hovered;
 
     const handleLogout = (e) => {
@@ -15,32 +16,41 @@ export default function Sidebar({ mobileOpen = false, onMobileClose }) {
     };
 
     const isDashboardActive = route().current('dashboard');
-    const isInboxActive     = route().current('admin.inbox');
-    const isKanbanActive    = route().current('admin.kanban');
-    const isMyReqActive     = route().current('my-requests');
-    const isGlobalActive    = route().current('global-monitor');
-    const isHistoryActive   = route().current('history');
-    const isProfileActive   = route().current('profile.edit');
+    const isInboxActive = route().current('admin.inbox');
+    const isKanbanActive = route().current('admin.kanban');
+    const isMyReqActive = route().current('my-requests');
+    const isGlobalActive = route().current('global-monitor');
+    const isHistoryActive = route().current('history');
+    const isProfileActive = route().current('profile.edit');
+    const isSystemsActive = route().current('admin.systems.index');
+    const isSuperAdmin = user.role_name?.toLowerCase() === 'superadmin' || user.role?.name?.toLowerCase() === 'superadmin';
+    console.log('Sidebar isSuperAdmin check:', isSuperAdmin, 'role_name:', user.role_name, 'role?.name:', user.role?.name);
 
     const avatarUrl = user.avatar_url || null;
-    const initials  = user.name.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase();
+    const initials = user.name.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase();
     const firstName = user.name.split(' ')[0];
 
     const itNavItems = [
-        { href: route('dashboard'),    active: isDashboardActive, label: 'Dashboard', icon: <IconHome /> },
-        { href: route('admin.inbox'),  active: isInboxActive,     label: 'Inbox',     icon: <IconInbox /> },
-        { href: route('admin.kanban'), active: isKanbanActive,    label: 'Kanban',    icon: <IconKanban /> },
-        { href: route('history'),      active: isHistoryActive,   label: 'History',   icon: <IconHistory /> },
+        { href: route('dashboard'), active: isDashboardActive, label: 'Dashboard', icon: <IconHome /> },
+        { href: route('admin.inbox'), active: isInboxActive, label: 'Inbox', icon: <IconInbox /> },
+        { href: route('admin.kanban'), active: isKanbanActive, label: 'Kanban', icon: <IconKanban /> },
+        { href: route('history'), active: isHistoryActive, label: 'History', icon: <IconHistory /> },
     ];
     const userNavItems = [
-        { href: route('dashboard'),      active: isDashboardActive, label: 'Dashboard',      icon: <IconHome /> },
-        { href: route('my-requests'),    active: isMyReqActive,     label: 'My Requests',    icon: <IconInbox /> },
-        { href: route('global-monitor'), active: isGlobalActive,    label: 'Global Monitor', icon: <IconKanban /> },
-        { href: route('history'),        active: isHistoryActive,   label: 'History',        icon: <IconHistory /> },
+        { href: route('dashboard'), active: isDashboardActive, label: 'Dashboard', icon: <IconHome /> },
+        { href: route('my-requests'), active: isMyReqActive, label: 'My Requests', icon: <IconInbox /> },
+        { href: route('global-monitor'), active: isGlobalActive, label: 'Global Monitor', icon: <IconKanban /> },
+        { href: route('history'), active: isHistoryActive, label: 'History', icon: <IconHistory /> },
     ];
+
+    if (isSuperAdmin) {
+        itNavItems.push({ href: route('admin.systems.index'), active: isSystemsActive, label: 'Kelola Sistem', icon: <IconSystem /> });
+        userNavItems.push({ href: route('admin.systems.index'), active: isSystemsActive, label: 'Kelola Sistem', icon: <IconSystem /> });
+    }
+
     const navItems = isIT ? itNavItems : userNavItems;
 
-    /* â”€â”€â”€ Reusable avatar widget â”€â”€â”€ */
+    /*Reusable avatar widget*/
     const AvatarWidget = ({ showText }) => (
         <Link
             href={route('profile.edit')}
@@ -67,7 +77,7 @@ export default function Sidebar({ mobileOpen = false, onMobileClose }) {
         </Link>
     );
 
-    /* â”€â”€â”€ Desktop sidebar â”€â”€â”€ */
+    /* Desktop sidebar */
     const desktopSidebar = (
         <aside
             onMouseEnter={() => setHovered(true)}
@@ -114,7 +124,7 @@ export default function Sidebar({ mobileOpen = false, onMobileClose }) {
         </aside>
     );
 
-    /* â”€â”€â”€ Mobile drawer â”€â”€â”€ */
+    /* Mobile drawer */
     const mobileSidebar = (
         <>
             {mobileOpen && (
@@ -123,9 +133,8 @@ export default function Sidebar({ mobileOpen = false, onMobileClose }) {
                     onClick={onMobileClose}
                 />
             )}
-            <aside className={`md:hidden fixed top-0 right-0 h-full w-64 bg-white dark:bg-zinc-950 border-l border-gray-200 dark:border-zinc-800 shadow-2xl z-40 flex flex-col transition-transform duration-300 ease-in-out ${
-                mobileOpen ? 'translate-x-0' : 'translate-x-full'
-            }`}>
+            <aside className={`md:hidden fixed top-0 right-0 h-full w-64 bg-white dark:bg-zinc-950 border-l border-gray-200 dark:border-zinc-800 shadow-2xl z-40 flex flex-col transition-transform duration-300 ease-in-out ${mobileOpen ? 'translate-x-0' : 'translate-x-full'
+                }`}>
                 <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-zinc-800">
                     <AppLogo collapsed={false} />
                     <button onClick={onMobileClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-zinc-300 transition cursor-pointer p-1">
@@ -165,7 +174,7 @@ export default function Sidebar({ mobileOpen = false, onMobileClose }) {
     );
 }
 
-/* â”€â”€â”€ Nav item â”€â”€â”€ */
+/* Nav item */
 function NavItem({ href, active, label, expanded, children, onClick }) {
     return (
         <Link
@@ -185,19 +194,24 @@ function NavItem({ href, active, label, expanded, children, onClick }) {
     );
 }
 
-/* â”€â”€â”€ Icons â”€â”€â”€ */
+/* Icons */
 function IconHome() {
-    return <svg width="18" height="18" fill="currentColor" viewBox="0 0 16 16"><path d="M8.707 1.5a1 1 0 0 0-1.414 0L.646 8.146a.5.5 0 0 0 .708.708L2 8.207V13.5A1.5 1.5 0 0 0 3.5 15h9a1.5 1.5 0 0 0 1.5-1.5V8.207l.646.647a.5.5 0 0 0 .708-.708L13 5.793V2.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1.293zM13 7.207V13.5a.5.5 0 0 1-.5.5h-9a.5.5 0 0 1-.5-.5V7.207l5-5z"/></svg>;
+    return <svg width="18" height="18" fill="currentColor" viewBox="0 0 16 16"><path d="M8.707 1.5a1 1 0 0 0-1.414 0L.646 8.146a.5.5 0 0 0 .708.708L2 8.207V13.5A1.5 1.5 0 0 0 3.5 15h9a1.5 1.5 0 0 0 1.5-1.5V8.207l.646.647a.5.5 0 0 0 .708-.708L13 5.793V2.5a.5.5 0 0 0-.5-.5h-1a.5.5 0 0 0-.5.5v1.293zM13 7.207V13.5a.5.5 0 0 1-.5.5h-9a.5.5 0 0 1-.5-.5V7.207l5-5z" /></svg>;
 }
 function IconInbox() {
-    return <svg width="18" height="18" fill="currentColor" viewBox="0 0 16 16"><path d="M4.98 1a.5.5 0 0 0-.39.188L1.54 5H6a.5.5 0 0 1 .5.5 1.5 1.5 0 0 0 3 0A.5.5 0 0 1 10 5h4.46l-3.05-3.812A.5.5 0 0 0 11.02 1zm9.954 5H10.45a2.5 2.5 0 0 1-4.9 0H1.066l.32 2.562A.5.5 0 0 0 1.884 9h12.234a.5.5 0 0 0 .496-.438zM3.809.563A1.5 1.5 0 0 1 4.981 0h6.038a1.5 1.5 0 0 1 1.172.563l3.7 4.625a.5.5 0 0 1 .105.374l-.39 3.124A1.5 1.5 0 0 1 14.117 10H1.883A1.5 1.5 0 0 1 .394 8.686l-.39-3.124a.5.5 0 0 1 .106-.374zM.125 11.17A.5.5 0 0 1 .5 11H6a.5.5 0 0 1 .5.5 1.5 1.5 0 0 0 3 0 .5.5 0 0 1 .5-.5h5.5a.5.5 0 0 1 .496.562l-.39 3.124A1.5 1.5 0 0 1 14.117 16H1.883a1.5 1.5 0 0 1-1.489-1.314l-.39-3.124a.5.5 0 0 1 .121-.393zm.941.83.32 2.562a.5.5 0 0 0 .497.438h12.234a.5.5 0 0 0 .496-.438l.32-2.562H10.45a2.5 2.5 0 0 1-4.9 0z"/></svg>;
+    return <svg width="18" height="18" fill="currentColor" viewBox="0 0 16 16"><path d="M4.98 1a.5.5 0 0 0-.39.188L1.54 5H6a.5.5 0 0 1 .5.5 1.5 1.5 0 0 0 3 0A.5.5 0 0 1 10 5h4.46l-3.05-3.812A.5.5 0 0 0 11.02 1zm9.954 5H10.45a2.5 2.5 0 0 1-4.9 0H1.066l.32 2.562A.5.5 0 0 0 1.884 9h12.234a.5.5 0 0 0 .496-.438zM3.809.563A1.5 1.5 0 0 1 4.981 0h6.038a1.5 1.5 0 0 1 1.172.563l3.7 4.625a.5.5 0 0 1 .105.374l-.39 3.124A1.5 1.5 0 0 1 14.117 10H1.883A1.5 1.5 0 0 1 .394 8.686l-.39-3.124a.5.5 0 0 1 .106-.374zM.125 11.17A.5.5 0 0 1 .5 11H6a.5.5 0 0 1 .5.5 1.5 1.5 0 0 0 3 0 .5.5 0 0 1 .5-.5h5.5a.5.5 0 0 1 .496.562l-.39 3.124A1.5 1.5 0 0 1 14.117 16H1.883a1.5 1.5 0 0 1-1.489-1.314l-.39-3.124a.5.5 0 0 1 .121-.393zm.941.83.32 2.562a.5.5 0 0 0 .497.438h12.234a.5.5 0 0 0 .496-.438l.32-2.562H10.45a2.5 2.5 0 0 1-4.9 0z" /></svg>;
 }
 function IconKanban() {
-    return <svg width="18" height="18" fill="currentColor" viewBox="0 0 16 16"><path d="M13.5 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1h-11a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1zm-11-1a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2z"/><path d="M6.5 3a1 1 0 0 1 1-1h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1a1 1 0 0 1-1-1zm-4 0a1 1 0 0 1 1-1h1a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1h-1a1 1 0 0 1-1-1zm8 0a1 1 0 0 1 1-1h1a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1h-1a1 1 0 0 1-1-1z"/></svg>;
+    return <svg width="18" height="18" fill="currentColor" viewBox="0 0 16 16"><path d="M13.5 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1h-11a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1zm-11-1a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2z" /><path d="M6.5 3a1 1 0 0 1 1-1h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1a1 1 0 0 1-1-1zm-4 0a1 1 0 0 1 1-1h1a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1h-1a1 1 0 0 1-1-1zm8 0a1 1 0 0 1 1-1h1a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1h-1a1 1 0 0 1-1-1z" /></svg>;
 }
 function IconHistory() {
-    return <svg width="18" height="18" fill="currentColor" viewBox="0 0 16 16"><path d="M8.515 1.019A7 7 0 0 0 8 1V0a8 8 0 0 1 .589.022zm2.004.45a7 7 0 0 0-.985-.299l.219-.976q.576.129 1.126.342zm1.37.71a7 7 0 0 0-.439-.27l.493-.87a8 8 0 0 1 .979.654l-.615.789a7 7 0 0 0-.418-.302zm1.834 1.79a7 7 0 0 0-.653-.796l.724-.69q.406.429.747.91zm.744 1.352a7 7 0 0 0-.214-.468l.893-.45a8 8 0 0 1 .45 1.088l-.95.313a7 7 0 0 0-.179-.483m.53 2.507a7 7 0 0 0-.1-1.025l.985-.17q.1.58.116 1.17zm-.131 1.538q.05-.254.081-.51l.993.123a8 8 0 0 1-.23 1.155l-.964-.267q.069-.247.12-.501m-.952 2.379q.276-.436.486-.908l.914.405q-.24.54-.555 1.038zm-.964 1.205q.183-.183.35-.378l.758.653a8 8 0 0 1-.401.432z"/><path d="M8 1a7 7 0 1 0 4.95 11.95l.707.707A8.001 8.001 0 1 1 8 0z"/><path d="M7.5 3a.5.5 0 0 1 .5.5v5.21l3.248 1.856a.5.5 0 0 1-.496.868l-3.5-2A.5.5 0 0 1 7 9V3.5a.5.5 0 0 1 .5-.5"/></svg>;
+    return <svg width="18" height="18" fill="currentColor" viewBox="0 0 16 16"><path d="M8.515 1.019A7 7 0 0 0 8 1V0a8 8 0 0 1 .589.022zm2.004.45a7 7 0 0 0-.985-.299l.219-.976q.576.129 1.126.342zm1.37.71a7 7 0 0 0-.439-.27l.493-.87a8 8 0 0 1 .979.654l-.615.789a7 7 0 0 0-.418-.302zm1.834 1.79a7 7 0 0 0-.653-.796l.724-.69q.406.429.747.91zm.744 1.352a7 7 0 0 0-.214-.468l.893-.45a8 8 0 0 1 .45 1.088l-.95.313a7 7 0 0 0-.179-.483m.53 2.507a7 7 0 0 0-.1-1.025l.985-.17q.1.58.116 1.17zm-.131 1.538q.05-.254.081-.51l.993.123a8 8 0 0 1-.23 1.155l-.964-.267q.069-.247.12-.501m-.952 2.379q.276-.436.486-.908l.914.405q-.24.54-.555 1.038zm-.964 1.205q.183-.183.35-.378l.758.653a8 8 0 0 1-.401.432z" /><path d="M8 1a7 7 0 1 0 4.95 11.95l.707.707A8.001 8.001 0 1 1 8 0z" /><path d="M7.5 3a.5.5 0 0 1 .5.5v5.21l3.248 1.856a.5.5 0 0 1-.496.868l-3.5-2A.5.5 0 0 1 7 9V3.5a.5.5 0 0 1 .5-.5" /></svg>;
+}
+function IconSystem() {
+    return <svg width="18" height="18" viewBox="0 0 48 48" fill="none" stroke="currentColor" strokeWidth={4} strokeLinejoin="round" >
+        <path d="M18 6H8a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2Zm0 22H8a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V30a2 2 0 0 0-2-2Zm17-8a7 7 0 1 0 0-14a7 7 0 0 0 0 14Zm5 8H30a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V30a2 2 0 0 0-2-2Z" />
+    </svg>
 }
 function IconLogout() {
-    return <svg width="18" height="18" fill="currentColor" viewBox="0 0 16 16"><path d="M8.5 10c-.276 0-.5-.448-.5-1s.224-1 .5-1 .5.448.5 1-.224 1-.5 1"/><path d="M10.828.122A.5.5 0 0 1 11 .5V1h.5A1.5 1.5 0 0 1 13 2.5V15h1.5a.5.5 0 0 1 0 1h-13a.5.5 0 0 1 0-1H3V1.5a.5.5 0 0 1 .43-.495l7-1a.5.5 0 0 1 .398.117M11.5 2H11v13h1V2.5a.5.5 0 0 0-.5-.5M4 1.934V15h6V1.077z"/></svg>;
+    return <svg width="18" height="18" fill="currentColor" viewBox="0 0 16 16"><path d="M8.5 10c-.276 0-.5-.448-.5-1s.224-1 .5-1 .5.448.5 1-.224 1-.5 1" /><path d="M10.828.122A.5.5 0 0 1 11 .5V1h.5A1.5 1.5 0 0 1 13 2.5V15h1.5a.5.5 0 0 1 0 1h-13a.5.5 0 0 1 0-1H3V1.5a.5.5 0 0 1 .43-.495l7-1a.5.5 0 0 1 .398.117M11.5 2H11v13h1V2.5a.5.5 0 0 0-.5-.5M4 1.934V15h6V1.077z" /></svg>;
 }
