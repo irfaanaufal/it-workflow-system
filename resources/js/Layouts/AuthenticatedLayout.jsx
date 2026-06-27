@@ -41,10 +41,11 @@ export default function AuthenticatedLayout({
     const isIT = user.is_it === true;
     const isDashboardOrKanban = route().current('dashboard') || route().current('admin.kanban');
 
-    const [greeting, setGreeting] = useState('Good Morning');
+    const greeting = 'Hello';
     const [isDarkMode, setIsDarkMode] = useState(false);
     const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
     const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+    const [isMobileNotifModalOpen, setIsMobileNotifModalOpen] = useState(false);
 
     const [searchOpen, setSearchOpen] = useState(false);
     const [notifOpen, setNotifOpen] = useState(false);
@@ -122,8 +123,6 @@ export default function AuthenticatedLayout({
     };
 
     useEffect(() => {
-        const h = new Date().getHours();
-        setGreeting(h < 12 ? 'Good Morning' : h < 17 ? 'Good Afternoon' : h < 21 ? 'Good Evening' : 'Good Night');
         const saved = localStorage.getItem('theme');
         if (saved === 'dark') { setIsDarkMode(true); document.documentElement.classList.add('dark'); }
     }, []);
@@ -312,7 +311,12 @@ export default function AuthenticatedLayout({
 
     return (
         <div className="min-h-screen bg-[#e8e9eb] dark:bg-[#0a0a0a] flex items-center justify-center md:p-4 gap-4 transition-colors duration-200">
-            <Sidebar mobileOpen={mobileSidebarOpen} onMobileClose={() => setMobileSidebarOpen(false)} />
+            <Sidebar
+                mobileOpen={mobileSidebarOpen}
+                onMobileClose={() => setMobileSidebarOpen(false)}
+                unreadCount={unreadCount}
+                onOpenNotifications={() => setIsMobileNotifModalOpen(true)}
+            />
 
             <div className="flex-1 h-screen md:h-[calc(100vh-2rem)] bg-[#f5f5f7] dark:bg-[#111111] md:border md:border-gray-200 dark:border-zinc-800/80 md:rounded-[32px] flex flex-col overflow-hidden md:shadow-lg transition-colors duration-200">
                 {/* Header */}
@@ -810,6 +814,61 @@ export default function AuthenticatedLayout({
                         <p className="text-xs text-gray-400 dark:text-zinc-600 mb-2">Tidak punya FID? Hubungi HRD.</p>
                         <button onClick={handleLogout} className="text-xs text-red-500 hover:text-red-700 dark:text-red-400 dark:hover:text-red-300 font-bold hover:underline transition cursor-pointer">Logout dari akun ini</button>
                     </div>
+                </div>
+            </Modal>
+
+            {/* Mobile Notifications Modal */}
+            <Modal show={isMobileNotifModalOpen} onClose={() => setIsMobileNotifModalOpen(false)} maxWidth="md">
+                <div className="p-6 max-h-[85vh] overflow-y-auto bg-white dark:bg-zinc-950 rounded-2xl flex flex-col">
+                    <div className="flex justify-between items-center mb-4 pb-3 border-b border-gray-100 dark:border-zinc-800">
+                        <div className="flex items-center gap-2">
+                            <h3 className="text-base font-extrabold text-gray-900 dark:text-white">Notifikasi Anda</h3>
+                            {unreadCount > 0 && (
+                                <span className="bg-rose-500 text-white text-[10px] font-black px-2 py-0.5 rounded-full">
+                                    {unreadCount} Baru
+                                </span>
+                            )}
+                        </div>
+                        <button onClick={() => setIsMobileNotifModalOpen(false)} className="text-gray-400 hover:text-gray-600 dark:hover:text-zinc-300 transition cursor-pointer p-1">
+                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
+
+                    <div className="flex-1 overflow-y-auto space-y-3 mb-4 pr-1">
+                        {notifications.length === 0 ? (
+                            <div className="py-12 text-center">
+                                <svg className="w-12 h-12 text-gray-300 dark:text-zinc-700 mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                                </svg>
+                                <p className="text-xs text-gray-400 dark:text-zinc-550 font-bold">Belum ada notifikasi</p>
+                            </div>
+                        ) : (
+                            notifications.map(n => (
+                                <div key={n.id} className={`flex items-start gap-3 p-3 rounded-2xl border transition ${!n.read ? 'bg-indigo-50/40 dark:bg-indigo-950/10 border-indigo-100/40 dark:border-indigo-900/20' : 'border-gray-100 dark:border-zinc-800/40 bg-white dark:bg-zinc-900/40'}`}>
+                                    <span className={`mt-2 w-2.5 h-2.5 rounded-full shrink-0 ${notifDot(n.status)}`} />
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-xs text-gray-700 dark:text-zinc-300 leading-relaxed font-semibold">{n.msg}</p>
+                                        <p className="text-[10px] text-gray-400 dark:text-zinc-500 mt-1">{n.time.toLocaleString('id-ID', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' })}</p>
+                                    </div>
+                                    {!n.read && <span className="w-1.5 h-1.5 rounded-full bg-indigo-500 shrink-0 mt-2.5" />}
+                                </div>
+                            ))
+                        )}
+                    </div>
+
+                    {notifications.length > 0 && unreadCount > 0 && (
+                        <button
+                            onClick={() => {
+                                markAllRead();
+                                setIsMobileNotifModalOpen(false);
+                            }}
+                            className="w-full py-2.5 rounded-xl bg-gray-900 dark:bg-zinc-100 text-white dark:text-zinc-900 hover:bg-black dark:hover:bg-white text-xs font-bold text-center cursor-pointer transition shadow-sm"
+                        >
+                            Tandai semua telah dibaca
+                        </button>
+                    )}
                 </div>
             </Modal>
 

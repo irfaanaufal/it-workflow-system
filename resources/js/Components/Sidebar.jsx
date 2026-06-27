@@ -3,7 +3,7 @@ import { useState } from 'react';
 import axios from 'axios';
 import AppLogo from '@/Components/AppLogo';
 
-export default function Sidebar({ mobileOpen = false, onMobileClose }) {
+export default function Sidebar({ mobileOpen = false, onMobileClose, unreadCount = 0, onOpenNotifications }) {
     const user = usePage().props.auth.user;
     console.log('Sidebar rendered. User object:', user);
     const [hovered, setHovered] = useState(false);
@@ -150,6 +150,28 @@ export default function Sidebar({ mobileOpen = false, onMobileClose }) {
                             {item.icon}
                         </NavItem>
                     ))}
+                    <button
+                        onClick={() => {
+                            onMobileClose();
+                            onOpenNotifications?.();
+                        }}
+                        className="flex items-center h-11 px-3 rounded-2xl transition duration-150 cursor-pointer w-full text-left gap-3 text-gray-400 dark:text-zinc-500 hover:text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-950/20 mt-1"
+                    >
+                        <span className="shrink-0 w-[18px] flex justify-center relative text-gray-400 dark:text-zinc-500">
+                            <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                                <path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                            </svg>
+                            {unreadCount > 0 && (
+                                <span className="absolute -top-1 -right-1 h-2 w-2 bg-rose-500 rounded-full" />
+                            )}
+                        </span>
+                        <span className="text-sm font-semibold flex-1">Notifikasi</span>
+                        {unreadCount > 0 && (
+                            <span className="bg-rose-500 text-white text-[9px] font-extrabold px-2 py-0.5 rounded-full shrink-0">
+                                {unreadCount > 9 ? '9+' : unreadCount}
+                            </span>
+                        )}
+                    </button>
                 </nav>
 
                 <div className="flex flex-col gap-0.5 px-3 pt-2 pb-5 border-t border-gray-100 dark:border-zinc-800">
