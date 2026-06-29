@@ -6,12 +6,12 @@ import { Head, Link, usePage } from '@inertiajs/react';
 import UatModal from '@/Components/UatModal';
 
 const STATUS_CONFIG = {
-    inbox:       { label: 'Menunggu Antrian', icon: '📬' },
-    review:      { label: 'Sedang Review',    icon: '🔍' },
-    to_do:       { label: 'Antrean Kerja',    icon: '📋' },
-    in_progress: { label: 'Dikerjakan',       icon: '⚙️' },
-    testing:     { label: 'Pengujian',        icon: '🧪' },
-    approved:    { label: 'Selesai',          icon: '✅' },
+    inbox: { label: 'Menunggu Antrian', icon: '📬' },
+    review: { label: 'Sedang Review', icon: '🔍' },
+    to_do: { label: 'Antrean Kerja', icon: '📋' },
+    in_progress: { label: 'Dikerjakan', icon: '⚙️' },
+    testing: { label: 'Pengujian', icon: '🧪' },
+    approved: { label: 'Selesai', icon: '✅' },
 };
 
 const STATUS_ORDER = ['inbox', 'review', 'to_do', 'in_progress', 'testing', 'approved'];
@@ -21,10 +21,10 @@ export default function TicketDetail({ ticketId }) {
     const currentKaryawanId = auth.user?.karyawan?.id;
     const isIT = auth.user?.is_it === true || auth.user?.karyawan?.divisi === 'IT';
 
-    const [ticket, setTicket]   = useState(null);
+    const [ticket, setTicket] = useState(null);
     const [timeline, setTimeline] = useState([]);
     const [loading, setLoading] = useState(true);
-    const [error, setError]     = useState('');
+    const [error, setError] = useState('');
     const [showLogs, setShowLogs] = useState(false);
     const [isUatOpen, setIsUatOpen] = useState(false);
     const [updatingStatus, setUpdatingStatus] = useState(false);
@@ -96,8 +96,8 @@ export default function TicketDetail({ ticketId }) {
             <div className="h-[70vh] flex items-center justify-center">
                 <div className="flex flex-col items-center gap-3">
                     <svg className="animate-spin h-8 w-8 text-indigo-500" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-20" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3"/>
-                        <path className="opacity-80" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/>
+                        <circle className="opacity-20" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
+                        <path className="opacity-80" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                     </svg>
                     <span className="text-xs text-gray-400 dark:text-zinc-500 font-semibold">Memuat detail tiket…</span>
                 </div>
@@ -119,8 +119,8 @@ export default function TicketDetail({ ticketId }) {
         </AuthenticatedLayout>
     );
 
-    const it      = ticket.admin_it;
-    const itUser  = it?.user;
+    const it = ticket.admin_it;
+    const itUser = it?.user;
     const avatarUrl = itUser?.avatar_url || null;
     const itInitials = it?.nama_karyawan?.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase() || 'IT';
 
@@ -152,7 +152,7 @@ export default function TicketDetail({ ticketId }) {
                 <button onClick={() => window.history.back()}
                     className="flex items-center gap-1.5 text-xs font-bold text-gray-400 dark:text-zinc-500 hover:text-gray-700 dark:hover:text-zinc-200 transition cursor-pointer">
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7"/>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
                     </svg>
                     Kembali
                 </button>
@@ -196,11 +196,10 @@ export default function TicketDetail({ ticketId }) {
                             return (
                                 <div key={statusKey} className="flex flex-col items-center relative z-10" style={{ width: `${100 / STATUS_ORDER.length}%` }}>
                                     {/* Circle Indicator */}
-                                    <div className={`w-8 h-8 md:w-14 md:h-14 rounded-full flex items-center justify-center transition-all duration-350 shadow-xs relative ${
-                                        isCompleted
-                                            ? 'bg-[#7a7a7a] text-white hover:scale-105 duration-200'
-                                            : 'bg-white dark:bg-zinc-900 border-2 border-[#b5b7bd] text-gray-400 hover:scale-105 duration-200'
-                                    }`}>
+                                    <div className={`w-8 h-8 md:w-14 md:h-14 rounded-full flex items-center justify-center transition-all duration-350 shadow-xs relative ${isCompleted
+                                        ? 'bg-[#7a7a7a] text-white hover:scale-105 duration-200'
+                                        : 'bg-white dark:bg-zinc-900 border-2 border-[#b5b7bd] text-gray-400 hover:scale-105 duration-200'
+                                        }`}>
                                         {isActive && (
                                             <span className="absolute -inset-1 rounded-full bg-[#7a7a7a] pulse-glow z-[-1]" />
                                         )}
@@ -213,11 +212,10 @@ export default function TicketDetail({ ticketId }) {
                                         )}
                                     </div>
                                     {/* Label */}
-                                    <span className={`text-[8px] md:text-xs font-bold text-center mt-2 md:mt-3 leading-tight ${
-                                        isCompleted
-                                            ? 'text-gray-800 dark:text-zinc-200 font-extrabold'
-                                            : 'text-gray-400 dark:text-zinc-500'
-                                    }`}>
+                                    <span className={`text-[8px] md:text-xs font-bold text-center mt-2 md:mt-3 leading-tight ${isCompleted
+                                        ? 'text-gray-800 dark:text-zinc-200 font-extrabold'
+                                        : 'text-gray-400 dark:text-zinc-500'
+                                        }`}>
                                         {cfg.label}
                                     </span>
                                 </div>
@@ -263,7 +261,7 @@ export default function TicketDetail({ ticketId }) {
                                                                 )}
                                                             </div>
                                                             <span className="text-[9px] font-bold text-gray-450 dark:text-zinc-600 whitespace-nowrap">
-                                                                {new Date(item.created_at).toLocaleString('id-ID',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'})}
+                                                                {new Date(item.created_at).toLocaleString('id-ID', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit' })}
                                                             </span>
                                                         </div>
                                                         {item.message && (
@@ -306,38 +304,12 @@ export default function TicketDetail({ ticketId }) {
                                     {ticket.judul_laporan}
                                 </h2>
 
-                                {/* Alasan Revisi */}
-                                {ticket.revision_reason && (
-                                    <div className="mb-6 p-4 rounded-2xl bg-rose-500/10 border border-rose-500/25 text-rose-700 dark:text-rose-450">
-                                        <p className="text-[10px] font-extrabold uppercase tracking-widest text-rose-600 dark:text-rose-400 mb-1.5 flex items-center gap-1.5">
-                                            <svg className="w-4 h-4 shrink-0 text-rose-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                                                <path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                                            </svg>
-                                            Alasan Revisi
-                                        </p>
-                                        <p className="text-xs font-semibold leading-relaxed whitespace-pre-wrap">{ticket.revision_reason}</p>
-                                    </div>
-                                )}
-
-                                {/* Feedback / Testimoni UAT */}
-                                {ticket.uat_feedback && (
-                                    <div className="mb-6 p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/25 text-emerald-700 dark:text-emerald-455">
-                                        <p className="text-[10px] font-extrabold uppercase tracking-widest text-emerald-600 dark:text-emerald-400 mb-1.5 flex items-center gap-1.5">
-                                            <svg className="w-4 h-4 shrink-0 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                                                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                            </svg>
-                                            Feedback / Testimoni UAT
-                                        </p>
-                                        <p className="text-xs font-semibold leading-relaxed whitespace-pre-wrap">{ticket.uat_feedback}</p>
-                                    </div>
-                                )}
-
                                 {/* Dynamic Details Fields */}
                                 <div className="space-y-5">
                                     {[
                                         { label: 'Kondisi di Lapangan', value: ticket.kondisi_lapangan },
-                                        { label: 'Keinginan Sistem',    value: ticket.keinginan_sistem },
-                                        { label: 'Dampak Positif',      value: ticket.dampak_positif },
+                                        { label: 'Keinginan Sistem', value: ticket.keinginan_sistem },
+                                        { label: 'Dampak Positif', value: ticket.dampak_positif },
                                     ].map(f => (
                                         <div key={f.label}>
                                             <p className="text-[10px] font-extrabold opacity-70 uppercase tracking-wider mb-1">{f.label}</p>
@@ -376,14 +348,14 @@ export default function TicketDetail({ ticketId }) {
                                     {/* Category Label */}
                                     <span className="flex items-center gap-1.5 opacity-80 hover:opacity-100 transition">
                                         <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                                            <rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/>
+                                            <rect x="3" y="3" width="7" height="7" /><rect x="14" y="3" width="7" height="7" /><rect x="14" y="14" width="7" height="7" /><rect x="3" y="14" width="7" height="7" />
                                         </svg>
                                         {ticket.kategori_laporan?.toUpperCase()}
                                     </span>
                                     {/* Reporter Name */}
                                     <span className="flex items-center gap-1.5 opacity-80 hover:opacity-100 transition">
                                         <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                                            <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
                                         </svg>
                                         {ticket.karyawan?.nama_karyawan}
                                     </span>
@@ -397,7 +369,7 @@ export default function TicketDetail({ ticketId }) {
                                     {/* Formatted Date & Time */}
                                     <span className="flex items-center gap-1.5 opacity-80 hover:opacity-100 transition">
                                         <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                                            <rect x="3" y="4" width="18" height="18" rx="2"/><line x1="3" y1="10" x2="21" y2="10"/>
+                                            <rect x="3" y="4" width="18" height="18" rx="2" /><line x1="3" y1="10" x2="21" y2="10" />
                                         </svg>
                                         {formatDate(ticket.created_at)}
                                     </span>
@@ -540,15 +512,14 @@ export default function TicketDetail({ ticketId }) {
                                 </div>
                                 <div className="h-1.5 bg-gray-100 dark:bg-zinc-800 rounded-full mb-3 overflow-hidden">
                                     <div className="h-full bg-emerald-400 rounded-full transition-all duration-500"
-                                        style={{ width: `${(ticket.checklists.filter(c => c.is_completed).length / ticket.checklists.length) * 100}%` }}/>
+                                        style={{ width: `${(ticket.checklists.filter(c => c.is_completed).length / ticket.checklists.length) * 100}%` }} />
                                 </div>
                                 <div className="space-y-2 max-h-40 overflow-y-auto">
                                     {ticket.checklists.map(cl => (
                                         <div key={cl.id} className="flex items-center gap-2.5">
-                                            <span className={`w-4 h-4 rounded flex items-center justify-center shrink-0 border text-[9px] font-black ${
-                                                cl.is_completed ? 'bg-emerald-100 dark:bg-emerald-900/30 border-emerald-300 dark:border-emerald-700 text-emerald-600 dark:text-emerald-400' :
-                                                cl.is_approved  ? 'bg-amber-100 dark:bg-amber-900/30 border-amber-300 dark:border-amber-700 text-amber-600 dark:text-amber-400' :
-                                                                  'bg-white dark:bg-zinc-800 border-gray-300 dark:border-zinc-600'}`}>
+                                            <span className={`w-4 h-4 rounded flex items-center justify-center shrink-0 border text-[9px] font-black ${cl.is_completed ? 'bg-emerald-100 dark:bg-emerald-900/30 border-emerald-300 dark:border-emerald-700 text-emerald-600 dark:text-emerald-400' :
+                                                cl.is_approved ? 'bg-amber-100 dark:bg-amber-900/30 border-amber-300 dark:border-amber-700 text-amber-600 dark:text-amber-400' :
+                                                    'bg-white dark:bg-zinc-800 border-gray-300 dark:border-zinc-600'}`}>
                                                 {cl.is_completed ? '✔' : cl.is_approved ? '●' : ''}
                                             </span>
                                             <span className={`text-xs flex-1 ${cl.is_completed ? 'line-through text-gray-400 dark:text-zinc-500' : 'text-gray-700 dark:text-zinc-300 font-semibold'}`}>
