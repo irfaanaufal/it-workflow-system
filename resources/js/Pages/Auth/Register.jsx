@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Head, Link, useForm } from '@inertiajs/react';
+import { Head, Link, useForm, usePage } from '@inertiajs/react';
 import { motion, AnimatePresence } from 'framer-motion';
 import InputError from '@/Components/InputError';
 import InputLabel from '@/Components/InputLabel';
@@ -8,6 +8,7 @@ import TextInput from '@/Components/TextInput';
 import ApplicationLogo from '@/Components/ApplicationLogo';
 
 export default function Register() {
+    const { asset_url } = usePage().props;
     const { data, setData, post, processing, errors, reset } = useForm({
         name: '',
         username: '',
@@ -95,7 +96,7 @@ export default function Register() {
             {/* Full-bleed background image */}
             <div className="fixed inset-0 -z-10">
                 <img
-                    src="/images/login_bg.png"
+                    src={`${asset_url}images/login_bg.png`}
                     alt=""
                     className="h-full w-full object-cover select-none pointer-events-none"
                 />

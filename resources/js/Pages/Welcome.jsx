@@ -1,13 +1,13 @@
 import { Head, Link } from '@inertiajs/react';
 
-export default function Welcome({ auth }) {
+export default function Welcome({ auth, asset_url }) {
     return (
         <>
             <Head title="Selamat Datang" />
             <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-indigo-50 dark:from-zinc-950 dark:via-zinc-900 dark:to-indigo-950 flex flex-col">
                 <nav className="flex items-center justify-between px-6 py-5 max-w-7xl mx-auto w-full">
                     <div className="flex items-center gap-3">
-                        <img src="/images/logo.png" alt="Logo" className="h-10 w-10" />
+                        <img src={`${asset_url}images/logo.png`} alt="Logo" className="h-10 w-10" />
                         <div className="leading-tight">
                             <p className="text-sm font-black text-gray-900 dark:text-white tracking-tight">SINDANGASIH</p>
                             <p className="text-[10px] font-bold text-rose-600 dark:text-rose-400 tracking-widest uppercase">MAKMUR</p>
@@ -43,7 +43,7 @@ export default function Welcome({ auth }) {
                 <main className="flex-1 flex items-center justify-center px-6 py-16">
                     <div className="max-w-3xl mx-auto text-center">
                         <div className="flex justify-center mb-8">
-                            <img src="/images/logo.png" alt="Logo" className="h-24 w-24" />
+                            <img src={`${asset_url}images/logo.png`} alt="Logo" className="h-24 w-24" />
                         </div>
                         <h1 className="text-4xl md:text-5xl font-black text-gray-900 dark:text-white mb-4 tracking-tight">
                             IT Workflow System

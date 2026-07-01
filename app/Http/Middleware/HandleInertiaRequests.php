@@ -54,6 +54,7 @@ class HandleInertiaRequests extends Middleware
             'auth' => [
                 'user' => $userData,
             ],
+            'asset_url' => asset(''),
         ];
     }
 }
