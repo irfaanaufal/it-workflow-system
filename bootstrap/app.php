@@ -22,6 +22,7 @@ return Application::configure(basePath: dirname(__DIR__))
         $middleware->alias([
             'admin.it' => \App\Http\Middleware\CheckAdminIT::class,
             'superadmin' => \App\Http\Middleware\CheckSuperAdmin::class,
+            'applications.access' => \App\Http\Middleware\CheckITWorkflowAccess::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

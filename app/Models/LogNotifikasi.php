@@ -23,6 +23,7 @@ class LogNotifikasi extends Model
         'message',
         'status',
         'read_at',
+        'visible_in_bell',
     ];
 
     protected function casts(): array

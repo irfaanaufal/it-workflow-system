@@ -4,29 +4,26 @@ namespace App\Http\Middleware;
 
 use Illuminate\Http\Request;
 use Inertia\Middleware;
+use Symfony\Component\HttpFoundation\Response;
 
 class HandleInertiaRequests extends Middleware
 {
-    /**
-     * The root template that is loaded on the first page visit.
-     *
-     * @var string
-     */
     protected $rootView = 'app';
 
-    /**
-     * Determine the current asset version.
-     */
     public function version(Request $request): ?string
     {
         return parent::version($request);
     }
 
-    /**
-     * Define the props that are shared by default.
-     *
-     * @return array<string, mixed>
-     */
+    public function rootView(Request $request): string
+    {
+        if ($request->is('api/*')) {
+            return 'app';
+        }
+
+        return parent::rootView($request);
+    }
+
     public function share(Request $request): array
     {
         $user = $request->user();
@@ -39,7 +36,14 @@ class HandleInertiaRequests extends Middleware
             $userData = $user->toArray();
             $userData['role_name'] = $user->role?->name ?? 'user';
             $userData['divisi']    = $user->karyawan?->divisi ?? null;
-            $userData['is_it']     = $user->karyawan?->divisi === 'IT';
+            $userData['is_it']     = $user->karyawan?->divisi === 'IT' || $user->isAdmin();
+            $userData['is_superadmin'] = $user->isSuperAdmin();
+            $userData['is_admin'] = $user->isAdmin();
+            $userData['has_it_workflow_access'] = $user->isAdmin()
+                || $user->userApplications()
+                    ->whereHas('application', fn($q) => $q->where('slug', 'it-workflow'))
+                    ->where('is_active', true)
+                    ->exists();
             $userData['avatar_url'] = $user->avatar_path
                 ? asset('storage/' . $user->avatar_path)
                 : null;
@@ -53,4 +57,3 @@ class HandleInertiaRequests extends Middleware
         ];
     }
 }
-

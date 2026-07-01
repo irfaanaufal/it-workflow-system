@@ -28,10 +28,10 @@ class LogNotifikasiController extends Controller
         $user = $request->user();
         $user->load('karyawan');
 
-        $isIT = $user->karyawan?->divisi === 'IT';
+        $isAdmin = $user->isAdmin();
         $isOwner = $user->karyawan && $ticket->karyawan_id === $user->karyawan->id;
 
-        if (!$isIT && !$isOwner) {
+        if (!$isAdmin && !$isOwner) {
             abort(403, 'Anda tidak memiliki izin untuk melihat timeline tiket ini.');
         }
 
@@ -74,11 +74,16 @@ class LogNotifikasiController extends Controller
 
     public function markAllRead(Request $request): JsonResponse
     {
-        LogNotifikasi::query()
+        $query = LogNotifikasi::query()
             ->where('user_id', $request->user()->id)
             ->where('visible_in_bell', true)
-            ->whereNull('read_at')
-            ->update(['read_at' => now()]);
+            ->whereNull('read_at');
+
+        if ($request->filled('ids')) {
+            $query->whereIn('id', (array) $request->input('ids'));
+        }
+
+        $query->update(['read_at' => now()]);
 
         return response()->json(['message' => 'Notifikasi ditandai sudah dibaca.']);
     }

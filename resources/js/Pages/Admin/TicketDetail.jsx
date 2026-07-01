@@ -19,7 +19,12 @@ const STATUS_ORDER = ['inbox', 'review', 'to_do', 'in_progress', 'testing', 'app
 export default function TicketDetail({ ticketId }) {
     const { auth } = usePage().props;
     const currentKaryawanId = auth.user?.karyawan?.id;
-    const isIT = auth.user?.is_it === true || auth.user?.karyawan?.divisi === 'IT';
+    const user = auth.user;
+    const role = user?.role_name;
+    const isAdmin = role === 'superadmin' || role === 'admin';
+    const isIT = isAdmin;
+    const canTake = isAdmin;
+    const canManageStatus = isAdmin;
 
     const [ticket, setTicket] = useState(null);
     const [timeline, setTimeline] = useState([]);
@@ -392,7 +397,7 @@ export default function TicketDetail({ ticketId }) {
                                     ) : (
                                         <div className="flex items-center gap-1.5">
                                             <span className="text-[10px] font-bold text-gray-500 italic">Belum diambil</span>
-                                            {isIT && ticket.status === 'inbox' && (
+                                            {canTake && ticket.status === 'inbox' && (
                                                 <button
                                                     onClick={handleTakeTicket}
                                                     disabled={updatingStatus}
@@ -430,7 +435,7 @@ export default function TicketDetail({ ticketId }) {
                         )}
 
                         {/* Status Controls Card for IT Admins */}
-                        {isIT && it && (
+                        {canManageStatus && it && (
                             <div className="bg-white dark:bg-zinc-900 rounded-[20px] border border-gray-200 dark:border-zinc-800 p-5 shadow-sm space-y-3">
                                 <div className="flex items-center justify-between">
                                     <span className="text-xs font-bold text-gray-450 dark:text-zinc-500 uppercase tracking-wider">Kelola Status Tiket</span>

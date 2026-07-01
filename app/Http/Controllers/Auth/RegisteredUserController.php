@@ -43,10 +43,13 @@ class RegisteredUserController extends Controller
 
         $fid = $request->fid;
         if (!$fid) {
-            // Attempt to match with karyawan list to auto-assign division
-            $karyawan = Karyawan::where('nama_karyawan', 'like', trim($request->name))->first();
-            if ($karyawan && !User::where('fid', $karyawan->fid)->exists()) {
-                $fid = $karyawan->fid;
+            try {
+                $karyawan = Karyawan::where('nama_karyawan', 'like', trim($request->name))->first();
+                if ($karyawan && !User::where('fid', $karyawan->fid)->exists()) {
+                    $fid = $karyawan->fid;
+                }
+            } catch (\Exception $e) {
+                // Karyawan table may not exist yet (e.g., in tests)
             }
         }
 
@@ -68,9 +71,7 @@ class RegisteredUserController extends Controller
 
         event(new Registered($user));
 
-        Auth::login($user);
-
-        return redirect(route('dashboard', absolute: false));
+        return redirect()->route('login')->with('status', 'Pendaftaran berhasil. Silakan masuk menggunakan akun Anda.');
     }
 
     /**

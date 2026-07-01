@@ -5,6 +5,7 @@ import PrimaryButton from '@/Components/PrimaryButton';
 import TextInput from '@/Components/TextInput';
 import GuestLayout from '@/Layouts/GuestLayout';
 import { Head, Link, useForm } from '@inertiajs/react';
+import Swal from 'sweetalert2';
 
 export default function Login({ status, canResetPassword }) {
     const { data, setData, post, processing, errors, reset } = useForm({
@@ -17,7 +18,23 @@ export default function Login({ status, canResetPassword }) {
         e.preventDefault();
 
         post(route('login'), {
-            onFinish: () => reset('password'),
+            onSuccess: () => reset('password'),
+            onError: (errs) => {
+                if (errs.activation_needed) {
+                    const alreadyShown = localStorage.getItem('activation_alert_shown');
+                    if (!alreadyShown) {
+                        localStorage.setItem('activation_alert_shown', '1');
+                        Swal.fire({
+                            icon: 'warning',
+                            title: 'Akun Belum Diaktifkan',
+                            text: errs.activation_needed,
+                            confirmButtonText: 'Notifikasi sudah dikirim ke admin',
+                            confirmButtonColor: '#6366f1',
+                        });
+                    }
+                }
+                reset('password');
+            },
         });
     };
 
@@ -47,6 +64,7 @@ export default function Login({ status, canResetPassword }) {
                     />
 
                     <InputError message={errors.username} className="mt-2" />
+                    <InputError message={errors.activation_needed} className="mt-2" />
                 </div>
 
                 <div className="mt-4">

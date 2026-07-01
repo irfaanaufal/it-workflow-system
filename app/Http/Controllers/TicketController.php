@@ -15,9 +15,6 @@ use Throwable;
 
 class TicketController extends Controller
 {
-    /**
-     * Display a listing of all tickets.
-     */
     public function index(): JsonResponse
     {
         $tickets = Ticket::with(['karyawan', 'adminIt', 'adminIt.user', 'systemPtsam'])
@@ -27,9 +24,6 @@ class TicketController extends Controller
         return response()->json($tickets);
     }
 
-    /**
-     * Store a newly created ticket in storage.
-     */
     public function store(StoreTicketRequest $request): JsonResponse
     {
         $user = $request->user();
@@ -42,7 +36,7 @@ class TicketController extends Controller
         }
 
         $validated = $request->validated();
-        
+
         $attachmentPath = null;
         if ($request->hasFile('attachment')) {
             $attachmentPath = $request->file('attachment')->store('attachments', 'public');
@@ -66,7 +60,6 @@ class TicketController extends Controller
             'system_ptsam_id' => $systemPtsamId,
         ]);
 
-        // Broadcast so admin IT receives a real-time notification.
         $this->broadcastTicketUpdate($ticket, 'created');
 
         return response()->json([
@@ -75,19 +68,20 @@ class TicketController extends Controller
         ], 201);
     }
 
-    /**
-     * Update own ticket — only allowed while status = 'inbox'.
-     */
     public function update(UpdateTicketRequest $request, $id): JsonResponse
     {
-        $ticket   = Ticket::findOrFail($id);
-        $karyawan = $request->user()->karyawan;
+        $ticket = Ticket::findOrFail($id);
+        $user = $request->user();
+        $karyawan = $user->karyawan;
 
-        if (!$karyawan || $ticket->karyawan_id !== $karyawan->id) {
+        $isOwner = $karyawan && $ticket->karyawan_id === $karyawan->id;
+        $canEdit = $user->isAdmin() || ($isOwner && $ticket->status === 'inbox');
+
+        if (!$canEdit) {
             return response()->json(['message' => 'Anda tidak memiliki izin untuk mengedit tiket ini.'], 403);
         }
 
-        if ($ticket->status !== 'inbox') {
+        if (!$user->isAdmin() && $ticket->status !== 'inbox') {
             return response()->json(['message' => 'Tiket hanya dapat diedit selama masih dalam antrean (Inbox).'], 400);
         }
 
@@ -102,9 +96,6 @@ class TicketController extends Controller
         return response()->json(['message' => 'Tiket berhasil diperbarui.', 'ticket' => $ticket->load(['karyawan', 'systemPtsam'])]);
     }
 
-    /**
-     * Display all tickets with status 'inbox'.
-     */
     public function getInbox(): JsonResponse
     {
         $tickets = Ticket::with(['karyawan', 'systemPtsam'])
@@ -115,9 +106,6 @@ class TicketController extends Controller
         return response()->json($tickets);
     }
 
-    /**
-     * Take a ticket by the authenticated IT Admin.
-     */
     public function takeTicket($id): JsonResponse
     {
         $ticket = Ticket::findOrFail($id);
@@ -137,13 +125,6 @@ class TicketController extends Controller
             ], 403);
         }
 
-        // Only IT division can take tickets
-        if ($karyawan->divisi !== 'IT') {
-            return response()->json([
-                'message' => 'Hanya karyawan dari divisi IT yang dapat mengambil laporan (Take).'
-            ], 403);
-        }
-
         $ticket->status = 'review';
         $ticket->admin_it_id = $karyawan->id;
         $ticket->save();
@@ -156,10 +137,6 @@ class TicketController extends Controller
         ]);
     }
 
-    /**
-     * UAT Approve — user approves their own ticket when status = 'testing'.
-     * Ticket moves to 'approved' and uat_feedback is saved.
-     */
     public function uatApprove(Request $request, $id): JsonResponse
     {
         $request->validate([
@@ -194,10 +171,6 @@ class TicketController extends Controller
         ]);
     }
 
-    /**
-     * UAT Revise — user requests revision, ticket goes back to 'review'.
-     * revision_reason is saved so IT can see why it was sent back.
-     */
     public function uatRevise(Request $request, $id): JsonResponse
     {
         $request->validate([
@@ -232,9 +205,6 @@ class TicketController extends Controller
         ]);
     }
 
-    /**
-     * Update the status of a specific ticket.
-     */
     public function updateStatus(Request $request, $id): JsonResponse
     {
         $request->validate([
@@ -252,10 +222,9 @@ class TicketController extends Controller
             ], 403);
         }
 
-        // Only IT division can update status
-        if ($karyawan->divisi !== 'IT') {
+        if (!$user->isAdmin()) {
             return response()->json([
-                'message' => 'Hanya karyawan dari divisi IT yang dapat memperbarui status laporan.'
+                'message' => 'Anda tidak memiliki hak akses untuk merubah status laporan ini.'
             ], 403);
         }
 
@@ -270,9 +239,6 @@ class TicketController extends Controller
         ]);
     }
 
-    /**
-     * Display a listing of tickets created by the authenticated user.
-     */
     public function myTickets(Request $request): JsonResponse
     {
         $karyawan = $request->user()->karyawan;
@@ -286,7 +252,6 @@ class TicketController extends Controller
             ->orderBy('created_at', 'desc')
             ->get()
             ->map(function ($ticket) {
-                // Tambahkan avatar_url IT penanggung jawab
                 if ($ticket->adminIt && $ticket->adminIt->user) {
                     $ticket->adminIt->user->avatar_url = $ticket->adminIt->user->avatar_path
                         ? asset('storage/' . $ticket->adminIt->user->avatar_path)
@@ -298,44 +263,41 @@ class TicketController extends Controller
         return response()->json($tickets);
     }
 
-    /**
-     * Soft-delete a ticket — only allowed while status = 'inbox' and only by the owner.
-     */
     public function softDelete(Request $request, $id): JsonResponse
     {
-        $ticket   = Ticket::findOrFail($id);
-        $karyawan = $request->user()->karyawan;
+        $ticket = Ticket::findOrFail($id);
+        $user = $request->user();
+        $karyawan = $user->karyawan;
 
-        if (!$karyawan || $ticket->karyawan_id !== $karyawan->id) {
+        $isOwner = $karyawan && $ticket->karyawan_id === $karyawan->id;
+        $canDelete = $user->isAdmin() || ($isOwner && $ticket->status === 'inbox');
+
+        if (!$canDelete) {
             return response()->json(['message' => 'Anda tidak memiliki izin untuk menghapus tiket ini.'], 403);
         }
 
-        if ($ticket->status !== 'inbox') {
+        if (!$user->isAdmin() && $ticket->status !== 'inbox') {
             return response()->json(['message' => 'Tiket hanya dapat dihapus selama masih dalam antrean (Inbox).'], 400);
         }
 
-        $ticket->delete(); // soft delete
+        $ticket->delete();
 
         return response()->json(['message' => 'Tiket berhasil dihapus.']);
     }
 
-    /**
-     * Show a single ticket with all relations (for IT Admin detail page).
-     */
     public function show(Request $request, $id): JsonResponse
     {
         $ticket = Ticket::with(['karyawan', 'adminIt', 'adminIt.user', 'checklists', 'systemPtsam'])
             ->findOrFail($id);
 
-        $karyawan = $request->user()->karyawan;
-        $isIT = $karyawan?->divisi === 'IT';
+        $user = $request->user();
+        $karyawan = $user->karyawan;
         $isOwner = $karyawan && $ticket->karyawan_id === $karyawan->id;
 
-        if (!$isIT && !$isOwner) {
+        if (!$user->isAdmin() && !$isOwner) {
             return response()->json(['message' => 'Anda tidak memiliki izin untuk melihat tiket ini.'], 403);
         }
 
-        // Append avatar URL for PIC IT
         if ($ticket->adminIt && $ticket->adminIt->user) {
             $ticket->adminIt->user->avatar_url = $ticket->adminIt->user->avatar_path
                 ? asset('storage/' . $ticket->adminIt->user->avatar_path)
@@ -383,7 +345,7 @@ class TicketController extends Controller
             }
 
             $this->createNotificationForUsers(
-                $this->itUsers(),
+                $this->adminUsers(),
                 $ticket,
                 'admin',
                 'new_ticket',
@@ -516,10 +478,10 @@ class TicketController extends Controller
             : null;
     }
 
-    private function itUsers()
+    private function adminUsers()
     {
-        return User::whereHas('karyawan', function ($query) {
-            $query->where('divisi', 'IT');
+        return User::whereHas('role', function ($query) {
+            $query->whereIn('name', ['superadmin', 'admin']);
         })->get();
     }
 }

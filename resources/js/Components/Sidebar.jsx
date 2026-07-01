@@ -5,10 +5,19 @@ import AppLogo from '@/Components/AppLogo';
 
 export default function Sidebar({ mobileOpen = false, onMobileClose, unreadCount = 0, onOpenNotifications }) {
     const user = usePage().props.auth.user;
-    console.log('Sidebar rendered. User object:', user);
     const [hovered, setHovered] = useState(false);
-    const isIT = user.is_it === true;
+    const [appsMenuOpen, setAppsMenuOpen] = useState(
+        route().current('applications.index') ||
+        route().current('admin.applications.requests') ||
+        route().current('admin.applications.index')
+    );
+    const [rolesMenuOpen, setRolesMenuOpen] = useState(
+        route().current('admin.roles-permissions.index')
+    );
     const expanded = hovered;
+    const role = user.role_name;
+    const isSuperAdmin = role === 'superadmin';
+    const isAdmin = role === 'superadmin' || role === 'admin';
 
     const handleLogout = (e) => {
         e.preventDefault();
@@ -23,34 +32,92 @@ export default function Sidebar({ mobileOpen = false, onMobileClose, unreadCount
     const isHistoryActive = route().current('history');
     const isProfileActive = route().current('profile.edit');
     const isSystemsActive = route().current('admin.systems.index');
-    const isSuperAdmin = user.role_name?.toLowerCase() === 'superadmin' || user.role?.name?.toLowerCase() === 'superadmin';
-    console.log('Sidebar isSuperAdmin check:', isSuperAdmin, 'role_name:', user.role_name, 'role?.name:', user.role?.name);
+    const activeTabParam = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('tab') : '';
+    const isRoleTabActive = route().current('admin.roles-permissions.index') && (!activeTabParam || activeTabParam === 'role-permissions');
+    const isUserTabActive = route().current('admin.roles-permissions.index') && activeTabParam === 'user-roles';
+    const isRolesActive = route().current('admin.roles-permissions.index');
+    const isApplicationsActive = route().current('applications.index') || route().current('admin.applications.requests') || route().current('admin.applications.index');
 
     const avatarUrl = user.avatar_url || null;
     const initials = user.name.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase();
     const firstName = user.name.split(' ')[0];
 
-    const itNavItems = [
-        { href: route('dashboard'), active: isDashboardActive, label: 'Dashboard', icon: <IconHome /> },
-        { href: route('admin.inbox'), active: isInboxActive, label: 'Inbox', icon: <IconInbox /> },
-        { href: route('admin.kanban'), active: isKanbanActive, label: 'Kanban', icon: <IconKanban /> },
-        { href: route('history'), active: isHistoryActive, label: 'History', icon: <IconHistory /> },
-    ];
-    const userNavItems = [
-        { href: route('dashboard'), active: isDashboardActive, label: 'Dashboard', icon: <IconHome /> },
-        { href: route('my-requests'), active: isMyReqActive, label: 'My Requests', icon: <IconInbox /> },
-        { href: route('global-monitor'), active: isGlobalActive, label: 'Global Monitor', icon: <IconKanban /> },
-        { href: route('history'), active: isHistoryActive, label: 'History', icon: <IconHistory /> },
-    ];
+    const hasAccess = user.has_it_workflow_access === true;
+    const navItems = [];
 
-    if (isSuperAdmin) {
-        itNavItems.push({ href: route('admin.systems.index'), active: isSystemsActive, label: 'Kelola Sistem', icon: <IconSystem /> });
-        userNavItems.push({ href: route('admin.systems.index'), active: isSystemsActive, label: 'Kelola Sistem', icon: <IconSystem /> });
+    if (hasAccess) {
+        // Dashboard: admin view (superadmin & admin) | user view (user)
+        navItems.push({ href: route('dashboard'), active: isDashboardActive, label: 'Dashboard', icon: <IconHome /> });
+
+        // Superadmin & Admin: Inbox
+        if (isAdmin) {
+            navItems.push({ href: route('admin.inbox'), active: isInboxActive, label: 'Inbox', icon: <IconInbox /> });
+        }
+
+        // Superadmin & Admin: Kanban
+        if (isAdmin) {
+            navItems.push({ href: route('admin.kanban'), active: isKanbanActive, label: 'Kanban', icon: <IconKanban /> });
+        }
+
+        // User: My Requests
+        if (!isAdmin) {
+            navItems.push({ href: route('my-requests'), active: isMyReqActive, label: 'My Requests', icon: <IconInbox /> });
+        }
+
+        // User only: Global Monitor
+        if (!isAdmin) {
+            navItems.push({ href: route('global-monitor'), active: isGlobalActive, label: 'Global Monitor', icon: <IconKanban /> });
+        }
+
+        // Superadmin only: Kelola Sistem
+        if (isSuperAdmin) {
+            navItems.push({ href: route('admin.systems.index'), active: isSystemsActive, label: 'System', icon: <IconSystem /> });
+        }
+
+        // All roles: History
+        navItems.push({ href: route('history'), active: isHistoryActive, label: 'History', icon: <IconHistory /> });
+
+        if (navItems.length > 0) {
+            navItems.push({ isDivider: true });
+        }
+
+        // Akses Aplikasi Dropdown
+        const appsSubItems = [
+            { href: route('applications.index'), active: route().current('applications.index'), label: 'Akses Saya' }
+        ];
+
+        if (isSuperAdmin || isAdmin) {
+            appsSubItems.push({ href: route('admin.applications.requests'), active: route().current('admin.applications.requests'), label: 'Kelola Permintaan' });
+        }
+
+        if (isSuperAdmin || isAdmin) {
+            appsSubItems.push({ href: route('admin.applications.index'), active: route().current('admin.applications.index'), label: 'Kelola Aplikasi' });
+        }
+
+        if (appsSubItems.length > 1) {
+            navItems.push({
+                id: 'apps',
+                label: 'Hak Akses',
+                icon: <IconApps />,
+                isDropdown: true,
+                active: isApplicationsActive,
+                subItems: appsSubItems
+            });
+        } else {
+            navItems.push({
+                href: route('applications.index'),
+                active: isApplicationsActive,
+                label: 'Hak Akses',
+                icon: <IconApps />
+            });
+        }
+
+        // Superadmin only: Hak Akses & Peran
+        if (isSuperAdmin) {
+            navItems.push({ href: route('admin.roles-permissions.index'), active: isRolesActive, label: 'Role User', icon: <IconLock /> });
+        }
     }
 
-    const navItems = isIT ? itNavItems : userNavItems;
-
-    /*Reusable avatar widget*/
     const AvatarWidget = ({ showText }) => (
         <Link
             href={route('profile.edit')}
@@ -77,7 +144,6 @@ export default function Sidebar({ mobileOpen = false, onMobileClose, unreadCount
         </Link>
     );
 
-    /* Desktop sidebar */
     const desktopSidebar = (
         <aside
             onMouseEnter={() => setHovered(true)}
@@ -85,7 +151,6 @@ export default function Sidebar({ mobileOpen = false, onMobileClose, unreadCount
             style={{ width: expanded ? '216px' : '68px' }}
             className="hidden md:flex h-[calc(100vh-2rem)] bg-white dark:bg-zinc-950 border border-gray-200/80 dark:border-zinc-800 rounded-[28px] flex-col py-4 flex-shrink-0 z-20 shadow-md transition-all duration-300 ease-in-out overflow-hidden"
         >
-            {/* Logo area */}
             <div className={`flex items-center mb-2 px-3 ${expanded ? '' : 'justify-center'}`}>
                 <Link href="/" className="block">
                     <AppLogo collapsed={!expanded} />
@@ -94,20 +159,30 @@ export default function Sidebar({ mobileOpen = false, onMobileClose, unreadCount
 
             <hr className="border-gray-100 dark:border-zinc-800 mx-3 mb-3" />
 
-            {/* Nav items */}
             <nav className="flex-1 flex flex-col gap-0.5 px-2 overflow-y-auto">
-                {navItems.map(item => (
-                    <NavItem key={item.label} href={item.href} active={item.active} label={item.label} expanded={expanded}>
-                        {item.icon}
-                    </NavItem>
-                ))}
+                {navItems.map((item, index) => {
+                    if (item.isDivider) {
+                        return <hr key={`div-${index}`} className="border-gray-100 dark:border-zinc-900 mx-2 my-2" />;
+                    }
+                    return item.isDropdown ? (
+                        <DropdownNavItem
+                            key={item.label}
+                            item={item}
+                            expanded={expanded}
+                            isOpen={item.id === 'apps' ? appsMenuOpen : rolesMenuOpen}
+                            setIsOpen={item.id === 'apps' ? setAppsMenuOpen : setRolesMenuOpen}
+                        />
+                    ) : (
+                        <NavItem key={item.label} href={item.href} active={item.active} label={item.label} expanded={expanded}>
+                            {item.icon}
+                        </NavItem>
+                    );
+                })}
             </nav>
 
-            {/* Bottom */}
             <div className="flex flex-col gap-0.5 px-2 pt-2">
                 <hr className="border-gray-100 dark:border-zinc-800 mx-1 mb-2" />
 
-                {/* Logout */}
                 <button
                     onClick={handleLogout}
                     className={`flex items-center h-11 rounded-2xl text-gray-400 dark:text-zinc-500 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/20 transition duration-150 cursor-pointer w-full overflow-hidden
@@ -118,13 +193,11 @@ export default function Sidebar({ mobileOpen = false, onMobileClose, unreadCount
                     {expanded && <span className="text-sm font-semibold whitespace-nowrap">Log out</span>}
                 </button>
 
-                {/* Avatar */}
                 <AvatarWidget showText={false} />
             </div>
         </aside>
     );
 
-    /* Mobile drawer */
     const mobileSidebar = (
         <>
             {mobileOpen && (
@@ -145,11 +218,25 @@ export default function Sidebar({ mobileOpen = false, onMobileClose, unreadCount
                 </div>
 
                 <nav className="flex-1 flex flex-col gap-0.5 px-3 pt-3 overflow-y-auto">
-                    {navItems.map(item => (
-                        <NavItem key={item.label} href={item.href} active={item.active} label={item.label} expanded={true} onClick={onMobileClose}>
-                            {item.icon}
-                        </NavItem>
-                    ))}
+                    {navItems.map((item, index) => {
+                        if (item.isDivider) {
+                            return <hr key={`div-${index}`} className="border-gray-100 dark:border-zinc-800 mx-1 my-2" />;
+                        }
+                        return item.isDropdown ? (
+                            <DropdownNavItem
+                                key={item.label}
+                                item={item}
+                                expanded={true}
+                                isOpen={item.id === 'apps' ? appsMenuOpen : rolesMenuOpen}
+                                setIsOpen={item.id === 'apps' ? setAppsMenuOpen : setRolesMenuOpen}
+                                onClick={onMobileClose}
+                            />
+                        ) : (
+                            <NavItem key={item.label} href={item.href} active={item.active} label={item.label} expanded={true} onClick={onMobileClose}>
+                                {item.icon}
+                            </NavItem>
+                        );
+                    })}
                     <button
                         onClick={() => {
                             onMobileClose();
@@ -196,7 +283,6 @@ export default function Sidebar({ mobileOpen = false, onMobileClose, unreadCount
     );
 }
 
-/* Nav item */
 function NavItem({ href, active, label, expanded, children, onClick }) {
     return (
         <Link
@@ -207,12 +293,63 @@ function NavItem({ href, active, label, expanded, children, onClick }) {
                 ${expanded ? 'gap-3 px-3' : 'justify-center px-0'}
                 ${active
                     ? 'bg-gray-100 dark:bg-zinc-900 text-gray-900 dark:text-white font-semibold shadow-sm'
-                    : 'text-gray-400 dark:text-zinc-500 hover:text-gray-700 dark:hover:text-zinc-200 hover:bg-gray-100/70 dark:hover:bg-zinc-800/60'
+                    : 'text-gray-400 dark:text-zinc-550 hover:text-gray-700 dark:hover:text-zinc-200 hover:bg-gray-100/70 dark:hover:bg-zinc-800/60'
                 }`}
         >
             <span className="shrink-0 w-[18px] flex justify-center">{children}</span>
             {expanded && <span className="text-sm font-semibold whitespace-nowrap">{label}</span>}
         </Link>
+    );
+}
+
+function DropdownNavItem({ item, expanded, isOpen, setIsOpen, onClick }) {
+    return (
+        <div className="flex flex-col gap-0.5">
+            <button
+                onClick={() => setIsOpen(!isOpen)}
+                title={item.label}
+                className={`flex items-center h-11 rounded-2xl transition duration-150 cursor-pointer w-full text-left
+                    ${expanded ? 'gap-3 px-3' : 'justify-center px-0'}
+                    ${item.active
+                        ? 'bg-gray-50 dark:bg-zinc-900/50 text-gray-900 dark:text-white font-semibold'
+                        : 'text-gray-400 dark:text-zinc-550 hover:text-gray-700 dark:hover:text-zinc-200 hover:bg-gray-100/70 dark:hover:bg-zinc-800/60'
+                    }`}
+            >
+                <span className="shrink-0 w-[18px] flex justify-center">{item.icon}</span>
+                {expanded && (
+                    <span className="text-sm font-semibold flex-1 whitespace-nowrap">{item.label}</span>
+                )}
+                {expanded && (
+                    <svg
+                        className={`h-4 w-4 transform transition-transform duration-250 ${isOpen ? 'rotate-180' : ''}`}
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                    >
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 9l-7 7-7-7" />
+                    </svg>
+                )}
+            </button>
+
+            {expanded && isOpen && (
+                <div className="pl-8 flex flex-col gap-0.5 mt-0.5">
+                    {item.subItems.map((sub, index) => (
+                        <Link
+                            key={index}
+                            href={sub.href}
+                            onClick={onClick}
+                            className={`flex items-center h-9 px-3 rounded-xl text-xs font-semibold transition duration-150
+                                ${sub.active
+                                    ? 'bg-indigo-50/60 dark:bg-indigo-950/30 text-indigo-700 dark:text-indigo-400'
+                                    : 'text-gray-500 dark:text-zinc-400 hover:text-gray-800 dark:hover:text-zinc-200 hover:bg-gray-50 dark:hover:bg-zinc-900/40'
+                                }`}
+                        >
+                            {sub.label}
+                        </Link>
+                    ))}
+                </div>
+            )}
+        </div>
     );
 }
 
@@ -236,4 +373,19 @@ function IconSystem() {
 }
 function IconLogout() {
     return <svg width="18" height="18" fill="currentColor" viewBox="0 0 16 16"><path d="M8.5 10c-.276 0-.5-.448-.5-1s.224-1 .5-1 .5.448.5 1-.224 1-.5 1" /><path d="M10.828.122A.5.5 0 0 1 11 .5V1h.5A1.5 1.5 0 0 1 13 2.5V15h1.5a.5.5 0 0 1 0 1h-13a.5.5 0 0 1 0-1H3V1.5a.5.5 0 0 1 .43-.495l7-1a.5.5 0 0 1 .398.117M11.5 2H11v13h1V2.5a.5.5 0 0 0-.5-.5M4 1.934V15h6V1.077z" /></svg>;
+}
+function IconApps() {
+    return (
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" className="bi bi-window-stack" viewBox="0 0 16 16">
+            <path d="M4.5 6a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1M6 6a.5.5 0 1 0 0-1 .5.5 0 0 0 0 1m2-.5a.5.5 0 1 1-1 0 .5.5 0 0 1 1 0" />
+            <path d="M12 1a2 2 0 0 1 2 2 2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2 2 2 0 0 1-2-2V3a2 2 0 0 1 2-2zM2 12V5a2 2 0 0 1 2-2h9a1 1 0 0 0-1-1H2a1 1 0 0 0-1 1v8a1 1 0 0 0 1 1m1-4v5a1 1 0 0 0 1 1h10a1 1 0 0 0 1-1V8zm12-1V5a1 1 0 0 0-1-1H4a1 1 0 0 0-1 1v2z" />
+        </svg>
+    );
+}
+function IconLock() {
+    return (
+        <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+        </svg>
+    );
 }

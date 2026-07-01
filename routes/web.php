@@ -8,6 +8,7 @@ use App\Http\Controllers\LogNotifikasiController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
+use App\Http\Controllers\ApplicationController;
 
 Route::get('/', function () {
     return Inertia::render('Welcome', [
@@ -25,9 +26,10 @@ use Illuminate\Support\Facades\DB;
 Route::get('/dashboard', function () {
     $user = auth()->user();
     $user->load('karyawan');
-    $isIT = $user->karyawan?->divisi === 'IT';
 
-    if (!$isIT) {
+    $isAdmin = $user->isAdmin();
+
+    if (!$isAdmin) {
         $karyawan = $user->karyawan;
         $tickets = $karyawan
             ? Ticket::with(['karyawan', 'adminIt'])
@@ -68,14 +70,12 @@ Route::get('/dashboard', function () {
         ]);
     }
 
-    // 1. Get recent inbox tickets (up to 5 items)
     $inboxTickets = Ticket::with('karyawan')
         ->where('status', 'inbox')
         ->orderBy('created_at', 'desc')
         ->limit(5)
         ->get();
 
-    // 2. Calculate category stats
     $statsRaw = Ticket::select('kategori_laporan', DB::raw('count(*) as total'))
         ->groupBy('kategori_laporan')
         ->get()
@@ -103,7 +103,6 @@ Route::get('/dashboard', function () {
         ],
     ];
 
-    // 3. Send ticket data for the dashboard filters and charts
     $allTickets = Ticket::with('karyawan')
         ->latest('created_at')
         ->get();
@@ -127,10 +126,22 @@ Route::get('/dashboard', function () {
         'tickets' => $allTickets,
         'currentYear' => (int) date('Y'),
     ]);
-})->middleware(['auth', 'verified'])->name('dashboard');
+})->middleware(['auth', 'verified', 'applications.access'])->name('dashboard');
 
-Route::middleware('auth')->group(function () {
-    // Test route to manually broadcast an event for debugging
+Route::middleware(['auth', 'verified'])->group(function () {
+    Route::get('/applications', [ApplicationController::class, 'index'])->name('applications.index');
+    Route::post('/applications/request', [ApplicationController::class, 'requestAccess'])->name('applications.request');
+    
+    Route::get('/admin/applications/requests', [ApplicationController::class, 'requests'])->name('admin.applications.requests');
+    Route::patch('/applications/toggle', [ApplicationController::class, 'toggleAccess'])->name('applications.toggle');
+    
+    Route::get('/admin/applications', [ApplicationController::class, 'manage'])->name('admin.applications.index');
+    Route::post('/admin/applications', [ApplicationController::class, 'store'])->name('admin.applications.store');
+    Route::patch('/admin/applications/{id}', [ApplicationController::class, 'update'])->name('admin.applications.update');
+    Route::delete('/admin/applications/{id}', [ApplicationController::class, 'destroy'])->name('admin.applications.destroy');
+});
+
+Route::middleware(['auth', 'applications.access'])->group(function () {
     Route::get('/test-broadcast/{ticketId?}', function ($ticketId = null) {
         $ticket = $ticketId ? Ticket::find($ticketId) : Ticket::first();
         if (!$ticket) {
@@ -146,7 +157,6 @@ Route::middleware('auth')->group(function () {
     Route::post('/profile/link-fid', [ProfileController::class, 'linkFid'])->name('profile.link-fid');
     Route::post('/profile/avatar', [ProfileController::class, 'updateAvatar'])->name('profile.avatar');
 
-    // Karyawan / User Pages
     Route::get('/my-requests', function () {
         return Inertia::render('User/MyRequests');
     })->name('my-requests');
@@ -161,21 +171,16 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/history', function () {
         $user = auth()->user();
-        $user->load('karyawan');
-        $isIT = $user->karyawan?->divisi === 'IT';
+        $isAdmin = $user->isAdmin();
 
-        if ($isIT) {
-            // IT sees all tickets
+        if ($isAdmin) {
             $tickets = Ticket::with('karyawan')->where('status', 'approved')->orderBy('updated_at', 'desc')->get();
         } else {
-            // Inputer sees only their own tickets
-            $karyawan = $user->karyawan;
-            $tickets = $karyawan
-                ? Ticket::with('karyawan')
-                    ->where('karyawan_id', $karyawan->id)
-                    ->where('status', 'approved')
-                    ->orderBy('updated_at', 'desc')
-                    ->get()
+            $divisi = $user->karyawan?->divisi;
+            $tickets = $divisi
+                ? Ticket::whereHas('karyawan', function ($q) use ($divisi) {
+                    $q->where('divisi', $divisi);
+                })->where('status', 'approved')->with('karyawan')->orderBy('updated_at', 'desc')->get()
                 : collect();
         }
 
@@ -184,7 +189,6 @@ Route::middleware('auth')->group(function () {
         ]);
     })->name('history');
 
-    // Admin IT Pages (Protected by CheckAdminIT middleware)
     Route::middleware('admin.it')->group(function () {
         Route::get('/admin/inbox', function () {
             return Inertia::render('Admin/Inbox');
@@ -199,17 +203,17 @@ Route::middleware('auth')->group(function () {
         })->name('admin.ticket-detail');
     });
 
-    // Super Admin System CRUD
     Route::middleware('superadmin')->group(function () {
         Route::get('/admin/systems', [\App\Http\Controllers\SystemPtsamController::class, 'index'])->name('admin.systems.index');
         Route::post('/admin/systems', [\App\Http\Controllers\SystemPtsamController::class, 'store'])->name('admin.systems.store');
         Route::patch('/admin/systems/{id}', [\App\Http\Controllers\SystemPtsamController::class, 'update'])->name('admin.systems.update');
         Route::delete('/admin/systems/{id}', [\App\Http\Controllers\SystemPtsamController::class, 'destroy'])->name('admin.systems.destroy');
+
+        Route::get('/admin/roles-permissions', [\App\Http\Controllers\RolePermissionController::class, 'index'])->name('admin.roles-permissions.index');
+        Route::patch('/admin/users/{id}/role', [\App\Http\Controllers\RolePermissionController::class, 'updateUserRole'])->name('admin.users.update-role');
     });
 
-    // API Routes running under the 'web' middleware group (session/auth booted)
     Route::prefix('api')->group(function () {
-        // Regular users & IT Admin can create and list tickets
         Route::post('/tickets', [TicketController::class, 'store']);
         Route::get('/tickets', [TicketController::class, 'index']);
         Route::get('/my-tickets', [TicketController::class, 'myTickets']);
@@ -217,30 +221,24 @@ Route::middleware('auth')->group(function () {
         Route::patch('/notifications/read-all', [LogNotifikasiController::class, 'markAllRead']);
         Route::get('/systems', [\App\Http\Controllers\SystemPtsamController::class, 'apiIndex']);
 
-        // Protected routes for IT Admins only (placed BEFORE wildcard {id} routes)
         Route::middleware('admin.it')->group(function () {
             Route::get('/tickets/inbox', [TicketController::class, 'getInbox']);
             Route::post('/tickets/{id}/take', [TicketController::class, 'takeTicket']);
             Route::patch('/tickets/{id}/status', [TicketController::class, 'updateStatus']);
 
-            // Technical sub-task checklists
             Route::post('/checklists', [ChecklistController::class, 'store']);
             Route::patch('/checklists/{id}/toggle-approve', [ChecklistController::class, 'toggleApprove']);
             Route::patch('/checklists/{id}/toggle-complete', [ChecklistController::class, 'toggleComplete']);
         });
 
-        // Wildcard {id} routes MUST come after specific literal routes like /tickets/inbox
         Route::get('/tickets/{id}', [TicketController::class, 'show']);
         Route::get('/tickets/{id}/timeline', [LogNotifikasiController::class, 'ticketTimeline']);
 
-        // UAT Approval — any authenticated user can approve their OWN ticket when it's in 'testing'
         Route::patch('/tickets/{id}/uat-approve', [TicketController::class, 'uatApprove']);
         Route::patch('/tickets/{id}/uat-revise',  [TicketController::class, 'uatRevise']);
 
-        // Edit own ticket — only when status = 'inbox'
         Route::patch('/tickets/{id}', [TicketController::class, 'update']);
 
-        // Soft-delete own ticket — only when status = 'inbox'
         Route::delete('/tickets/{id}', [TicketController::class, 'softDelete']);
     });
 });

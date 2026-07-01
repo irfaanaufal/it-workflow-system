@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { getCategoryStyles, getUrgencyBadgeStyles } from '@/Utils/ticketHelpers';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head, router } from '@inertiajs/react';
+import { Head, router, usePage } from '@inertiajs/react';
 
 // Helper to sort tickets by urgency: blocker > high > medium > low
 const sortByUrgency = (tickets) => {
@@ -154,12 +154,19 @@ function InboxCard({ ticket, onTake, onDetail }) {
                         title="Detail Laporan">
                         Detail
                     </button>
-                    <button
-                        onClick={() => onTake(ticket.id)}
-                        className="bg-gray-100 hover:bg-gray-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-[10px] font-bold text-gray-700 dark:text-zinc-300 py-1.5 px-3.5 rounded-lg flex items-center gap-1 transition border border-gray-200/60 dark:border-zinc-700 cursor-pointer"
-                    >
-                        Take <span className="text-gray-400 dark:text-zinc-500 font-normal">→</span>
-                    </button>
+                    {(() => {
+                        const user = usePage().props.auth.user;
+                        const canTake = user.role_name === 'superadmin' || user.role_name === 'admin';
+                        if (!canTake) return null;
+                        return (
+                            <button
+                                onClick={() => onTake(ticket.id)}
+                                className="bg-gray-100 hover:bg-gray-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-[10px] font-bold text-gray-700 dark:text-zinc-300 py-1.5 px-3.5 rounded-lg flex items-center gap-1 transition border border-gray-200/60 dark:border-zinc-700 cursor-pointer"
+                            >
+                                Take <span className="text-gray-400 dark:text-zinc-500 font-normal">→</span>
+                            </button>
+                        );
+                    })()}
                 </div>
             </div>
         </div>

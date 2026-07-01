@@ -3,7 +3,7 @@ import axios from 'axios';
 import { getCategoryStyles, getUrgencyBadgeStyles } from '@/Utils/ticketHelpers';
 import UatModal from '@/Components/UatModal';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head, router } from '@inertiajs/react';
+import { Head, router, usePage } from '@inertiajs/react';
 
 // Kategori yang boleh pakai Blocker
 const BLOCKER_CATEGORIES = ['fix bug', 'maintenance'];
@@ -157,6 +157,14 @@ function TicketCard({ ticket, onUat, onDetail, onEdit, onDelete }) {
         if (ticket.status !== 'testing') setReadyToSubmit(false);
     }, [ticket.status]);
 
+    const { auth } = usePage().props;
+    const user = auth.user;
+    const isOwner = user?.karyawan?.id === ticket.karyawan_id;
+    const role = user?.role_name;
+    const isAdmin = role === 'superadmin' || role === 'admin';
+    const canEdit = isAdmin || (isOwner && ticket.status === 'inbox');
+    const canDelete = isAdmin || (isOwner && ticket.status === 'inbox');
+
     const handleTestingClick = () => {
         if (!readyToSubmit) {
             if (ticket.system_ptsam?.link_sistem) {
@@ -264,26 +272,27 @@ function TicketCard({ ticket, onUat, onDetail, onEdit, onDelete }) {
                             </svg>
                         </button>
 
-                        {ticket.status === 'inbox' ? (
-                            <>
-                                <button
-                                    onClick={onEdit}
-                                    className="text-[10px] font-bold text-indigo-500 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 flex items-center gap-1 transition cursor-pointer"
-                                    title="Ubah Laporan">
-                                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125" />
-                                    </svg>
-                                </button>
-                                <button
-                                    onClick={onDelete}
-                                    className="text-[10px] font-bold text-rose-400 hover:text-rose-600 dark:text-rose-500 dark:hover:text-rose-400 flex items-center gap-1 transition cursor-pointer"
-                                    title="Hapus tiket">
-                                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                    </svg>
-                                </button>
-                            </>
-                        ) : ticket.status === 'testing' ? (
+                        {canEdit && (
+                            <button
+                                onClick={onEdit}
+                                className="text-[10px] font-bold text-indigo-500 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 flex items-center gap-1 transition cursor-pointer"
+                                title="Ubah Laporan">
+                                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125" />
+                                </svg>
+                            </button>
+                        )}
+                        {canDelete && (
+                            <button
+                                onClick={onDelete}
+                                className="text-[10px] font-bold text-rose-400 hover:text-rose-600 dark:text-rose-500 dark:hover:text-rose-400 flex items-center gap-1 transition cursor-pointer"
+                                title="Hapus tiket">
+                                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                            </button>
+                        )}
+                        {ticket.status === 'testing' ? (
                             <button
                                 onClick={handleTestingClick}
                                 className={`text-white text-[10px] font-bold py-1.5 px-3 rounded-lg shadow-sm transition-all duration-200 cursor-pointer flex items-center gap-1.5 ${readyToSubmit

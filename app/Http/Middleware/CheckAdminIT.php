@@ -9,21 +9,16 @@ use Illuminate\Support\Facades\Auth;
 
 class CheckAdminIT
 {
-    /**
-     * Handle an incoming request.
-     * Only employees from the IT division are allowed through.
-     */
     public function handle(Request $request, Closure $next): Response
     {
         if (Auth::check()) {
             $user = Auth::user();
-            $user->load('karyawan');
 
-            if ($user->karyawan?->divisi === 'IT') {
+            if ($user->isAdmin()) {
                 return $next($request);
             }
         }
 
-        abort(403, 'Unauthorized. Hanya karyawan divisi IT yang dapat mengakses halaman ini.');
+        abort(403, 'Unauthorized. Anda tidak memiliki izin untuk mengakses halaman ini.');
     }
 }

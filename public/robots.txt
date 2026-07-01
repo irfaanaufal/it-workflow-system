@@ -1,2 +1,8 @@
 User-agent: *
-Disallow:
+Allow: /
+Disallow: /api/
+Disallow: /profile
+Disallow: /admin/
+Disallow: /storage/
+
+Sitemap: https://sindangasih-makmur.com/sitemap.xml

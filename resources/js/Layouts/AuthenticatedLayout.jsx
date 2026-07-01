@@ -1,4 +1,4 @@
-import { Link, usePage } from '@inertiajs/react';
+import { Link, router, usePage } from '@inertiajs/react';
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
 import Sidebar from '@/Components/Sidebar';
@@ -35,7 +35,10 @@ export default function AuthenticatedLayout({
     filterCategory: propFilterCategory,
     setFilterCategory: propSetFilterCategory,
     filterUrgency: propFilterUrgency,
-    setFilterUrgency: propSetFilterUrgency
+    setFilterUrgency: propSetFilterUrgency,
+    // Request approval status filter
+    statusFilter: propStatusFilter,
+    setStatusFilter: propSetStatusFilter
 }) {
     const user = usePage().props.auth.user;
     const isIT = user.is_it === true;
@@ -87,6 +90,10 @@ export default function AuthenticatedLayout({
     const [localFilterUrgency, localSetFilterUrgency] = useState('all');
     const filterUrgency = propFilterUrgency !== undefined ? propFilterUrgency : localFilterUrgency;
     const setFilterUrgency = propSetFilterUrgency !== undefined ? propSetFilterUrgency : localSetFilterUrgency;
+
+    const [localStatusFilter, localSetStatusFilter] = useState('all');
+    const statusFilter = propStatusFilter !== undefined ? propStatusFilter : localStatusFilter;
+    const setStatusFilter = propSetStatusFilter !== undefined ? propSetStatusFilter : localSetStatusFilter;
 
     const [filterOpen, setFilterOpen] = useState(false);
     const filterRef = useRef(null);
@@ -205,6 +212,49 @@ export default function AuthenticatedLayout({
             .then(() => setNotifications(prev => prev.map(n => ({ ...n, read: true }))))
             .catch(console.error);
     };
+
+    const markOneRead = (id) => {
+        axios.patch('/api/notifications/read-all', { ids: [id] })
+            .then(() => setNotifications(prev => prev.map(p => p.id === id ? { ...p, read: true } : p)))
+            .catch(console.error);
+    };
+
+    const handleNotifClick = (n) => {
+        if (!n.read) markOneRead(n.id);
+        setNotifOpen(false);
+        setIsMobileNotifModalOpen(false);
+
+        let path;
+        if (n.recipient_type === 'admin') {
+            if (n.action === 'new_ticket') path = '/admin/inbox';
+            else if (n.action === 'new_access_request') path = '/admin/applications/requests';
+            else if (n.action === 'activation_required') path = '/admin/applications/requests';
+            else path = n.ticket_id ? `/admin/tickets/${n.ticket_id}` : '/admin/inbox';
+        } else {
+            switch (n.action) {
+                case 'created':
+                    path = '/my-requests';
+                    break;
+                case 'ticket_taken':
+                case 'entered_review':
+                case 'entered_to_do':
+                case 'entered_in_progress':
+                    path = '/global-monitor';
+                    break;
+                case 'entered_testing':
+                case 'revision_requested':
+                    path = '/my-requests';
+                    break;
+                case 'approved':
+                case 'uat_approved':
+                    path = `/tickets/${n.ticket_id}`;
+                    break;
+                default:
+                    path = n.ticket_id ? `/tickets/${n.ticket_id}` : '/global-monitor';
+            }
+        }
+        router.visit(path);
+    };
     /* â”€â”€ Search â”€â”€ */
     useEffect(() => {
         if (!searchQuery.trim()) { setSearchResults([]); return; }
@@ -296,7 +346,8 @@ export default function AuthenticatedLayout({
         finally { setFidLinking(false); }
     };
 
-    const showCreateBtn = route().current('my-requests') || route().current('admin.inbox');
+    const canCreate = user?.role_name === 'superadmin' || user?.role_name === 'admin' || user?.role_name === 'user';
+    const showCreateBtn = canCreate && (route().current('my-requests') || route().current('admin.inbox'));
     const showSearch = !route().current('profile.edit') && !route().current('dashboard') && !route().current('admin.kanban') && !route().current('global-monitor');
     const todayDate = new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
 
@@ -385,6 +436,15 @@ export default function AuthenticatedLayout({
                             </button>
                         )}
 
+                        {/* + Tambah Aplikasi */}
+                        {route().current('admin.applications.index') && (
+                            <button onClick={() => window.dispatchEvent(new CustomEvent('open-add-application-modal'))}
+                                className="hidden md:flex h-9 md:h-10 px-3 md:px-4 rounded-xl bg-gray-900 dark:bg-zinc-100 text-white dark:text-zinc-950 hover:bg-black dark:hover:bg-white items-center gap-1.5 text-xs font-bold shadow-xs cursor-pointer transition">
+                                <span className="text-sm font-black leading-none">+</span>
+                                <span>Tambah Aplikasi</span>
+                            </button>
+                        )}
+
                         {/* Search Pill (inline, round-full, matches Image 1) */}
                         {searchOpen && showSearch && (
                             <div className="relative animate-fadeIn hidden sm:block">
@@ -450,7 +510,7 @@ export default function AuthenticatedLayout({
                                                     <p className="text-xs text-gray-400 dark:text-zinc-500 font-semibold">Belum ada notifikasi</p>
                                                 </div>
                                             ) : notifications.map(n => (
-                                                <div key={n.id} className={`flex items-start gap-3 px-4 py-3 border-b border-gray-50 dark:border-zinc-800/60 last:border-0 transition ${!n.read ? 'bg-indigo-50/40 dark:bg-indigo-950/10' : ''}`}>
+                                                <div key={n.id} onClick={() => handleNotifClick(n)} className={`flex items-start gap-3 px-4 py-3 border-b border-gray-50 dark:border-zinc-800/60 last:border-0 transition cursor-pointer hover:bg-gray-50 dark:hover:bg-zinc-800/40 ${!n.read ? 'bg-indigo-50/40 dark:bg-indigo-950/10' : ''}`}>
                                                     <span className={`mt-1.5 w-2 h-2 rounded-full shrink-0 ${notifDot(n.status)}`} />
                                                     <div className="flex-1 min-w-0">
                                                         <p className="text-xs text-gray-700 dark:text-zinc-300 leading-snug">{n.msg}</p>
@@ -532,7 +592,7 @@ export default function AuthenticatedLayout({
                         </div>
 
                         {/* Standalone Filter Button (Only on History or Systems page, matches Image 2) */}
-                        {(route().current('history') || route().current('admin.systems.index')) && (
+                        {(route().current('history') || route().current('admin.systems.index') || route().current('admin.applications.requests')) && (
                             <div className="relative" ref={filterRef}>
                                 <button onClick={() => setFilterOpen(p => !p)} title="Filter Data"
                                     className={`h-9 w-9 md:h-10 md:w-10 bg-white dark:bg-zinc-900 hover:bg-gray-100 dark:hover:bg-zinc-800 border border-gray-200 dark:border-zinc-800 rounded-xl flex items-center justify-center text-gray-500 dark:text-zinc-400 shadow-sm transition cursor-pointer shrink-0 ${filterOpen ? 'ring-2 ring-indigo-500/20 border-indigo-400' : ''}`}>
@@ -542,6 +602,25 @@ export default function AuthenticatedLayout({
                                 </button>
                                 {filterOpen && (
                                     <div className="fixed left-4 right-4 top-[64px] sm:absolute sm:left-auto sm:right-0 sm:top-[calc(100%+10px)] sm:w-64 bg-white dark:bg-zinc-900 rounded-2xl border border-gray-200 dark:border-zinc-800 shadow-xl z-50 p-4 space-y-4">
+                                        {route().current('admin.applications.requests') && (
+                                            <div>
+                                                <label className="block text-[9px] font-bold text-gray-400 dark:text-zinc-500 uppercase tracking-wider mb-1.5">Status</label>
+                                                <div className="inline-flex rounded-lg border border-gray-200 dark:border-zinc-800 p-0.5 bg-gray-50 dark:bg-zinc-900 w-full">
+                                                    {['all', 'pending', 'active'].map(s => (
+                                                        <button key={s}
+                                                            onClick={() => setStatusFilter(s)}
+                                                            className={`flex-1 px-2 py-1 text-xs font-semibold rounded-md transition-all cursor-pointer ${
+                                                                statusFilter === s
+                                                                    ? 'bg-white dark:bg-zinc-800 text-gray-900 dark:text-white shadow-sm'
+                                                                    : 'text-gray-500 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-zinc-200'
+                                                            }`}
+                                                        >
+                                                            {s === 'all' ? 'Semua' : s === 'pending' ? 'Pending' : 'Aktif'}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
                                         {route().current('history') && (
                                             <>
                                                 <div>
@@ -846,7 +925,7 @@ export default function AuthenticatedLayout({
                             </div>
                         ) : (
                             notifications.map(n => (
-                                <div key={n.id} className={`flex items-start gap-3 p-3 rounded-2xl border transition ${!n.read ? 'bg-indigo-50/40 dark:bg-indigo-950/10 border-indigo-100/40 dark:border-indigo-900/20' : 'border-gray-100 dark:border-zinc-800/40 bg-white dark:bg-zinc-900/40'}`}>
+                                <div key={n.id} onClick={() => { handleNotifClick(n); }} className={`flex items-start gap-3 p-3 rounded-2xl border transition cursor-pointer hover:bg-gray-50 dark:hover:bg-zinc-800/40 ${!n.read ? 'bg-indigo-50/40 dark:bg-indigo-950/10 border-indigo-100/40 dark:border-indigo-900/20' : 'border-gray-100 dark:border-zinc-800/40 bg-white dark:bg-zinc-900/40'}`}>
                                     <span className={`mt-2 w-2.5 h-2.5 rounded-full shrink-0 ${notifDot(n.status)}`} />
                                     <div className="flex-1 min-w-0">
                                         <p className="text-xs text-gray-700 dark:text-zinc-300 leading-relaxed font-semibold">{n.msg}</p>
