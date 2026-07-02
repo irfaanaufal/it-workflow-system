@@ -163,49 +163,7 @@ export default function AuthenticatedLayout({
         }
     }, [isCreateModalOpen]);
 
-    /* -- Single Echo subscription — also dispatches a window event for child pages -- */
-    useEffect(() => {
-        if (typeof window.Echo === 'undefined') return;
 
-        console.log('Setting up Echo subscriptions');
-        console.log('user.karyawan:', user.karyawan);
-
-        const publicChannel = window.Echo.channel('tickets-channel');
-        console.log('Subscribed to public channel: tickets-channel');
-
-        const handler = (data) => {
-            console.log('🎉 Received event data:', data);
-            const ticket = data.ticket ?? data;
-            console.log('Extracted ticket:', ticket);
-            window.dispatchEvent(
-                new CustomEvent('ticket-status-updated', { detail: { ticket } })
-            );
-
-            fetchNotifications();
-        };
-
-        let privateChannel;
-
-        if (isIT) {
-            publicChannel.listen('.TicketStatusUpdated', handler);
-        } else if (user.karyawan?.id) {
-            const channelName = `user-notification.${user.karyawan.id}`;
-            console.log('Subscribing to private channel:', channelName);
-            privateChannel = window.Echo.private(channelName);
-            privateChannel.listen('.TicketStatusUpdated', handler);
-        }
-
-        return () => {
-            console.log('Cleaning up Echo subscriptions');
-            publicChannel.stopListening('.TicketStatusUpdated', handler);
-            window.Echo.leave('tickets-channel');
-
-            if (privateChannel) {
-                privateChannel.stopListening('.TicketStatusUpdated', handler);
-                window.Echo.leave(`user-notification.${user.karyawan.id}`);
-            }
-        };
-    }, [isIT, user.karyawan?.id]);
 
     const markAllRead = () => {
         axios.patch('/api/notifications/read-all')

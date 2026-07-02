@@ -45,35 +45,46 @@ class AuthenticatedSessionController extends Controller
                 ->where('application_id', $app->id)
                 ->first();
 
-            if (!$userApp || !$userApp->is_active) {
-                $notifExists = LogNotifikasi::where('actor_user_id', $user->id)
-                    ->where('action', 'activation_required')
-                    ->exists();
+            if (!$userApp) {
+                // Auto-Request: Jika belum ada entri, buat entri baru dengan is_active = false
+                $userApp = UserApplication::create([
+                    'user_id' => $user->id,
+                    'application_id' => $app->id,
+                    'is_active' => false,
+                ]);
 
-                if (!$notifExists) {
-                    $adminUsers = User::whereHas('role', fn($q) => $q->whereIn('name', ['superadmin', 'admin']))->get();
-                    $adminUsers->each(function ($admin) use ($user) {
-                        LogNotifikasi::create([
-                            'user_id' => $admin->id,
-                            'ticket_id' => null,
-                            'actor_user_id' => $user->id,
-                            'actor_name' => $user->name,
-                            'recipient_type' => 'admin',
-                            'action' => 'activation_required',
-                            'title' => 'Percobaan login oleh user non-aktif',
-                            'message' => $user->name . ' (' . $user->username . ') mencoba masuk namun akun belum diaktifkan untuk aplikasi IT Workflow.',
-                            'status' => null,
-                            'visible_in_bell' => true,
-                        ]);
-                    });
-                }
+                // Create notification for admin
+                $adminUsers = User::whereHas('role', fn($q) => $q->whereIn('name', ['superadmin', 'admin']))->get();
+                $adminUsers->each(function ($admin) use ($user) {
+                    LogNotifikasi::create([
+                        'user_id' => $admin->id,
+                        'ticket_id' => null,
+                        'actor_user_id' => $user->id,
+                        'actor_name' => $user->name,
+                        'recipient_type' => 'admin',
+                        'action' => 'activation_required',
+                        'title' => 'Percobaan login oleh user non-aktif',
+                        'message' => $user->name . ' (' . $user->username . ') mencoba masuk namun akun belum diaktifkan untuk aplikasi IT Workflow.',
+                        'status' => null,
+                        'visible_in_bell' => true,
+                    ]);
+                });
 
                 Auth::guard('web')->logout();
                 $request->session()->invalidate();
                 $request->session()->regenerateToken();
 
-                return redirect()->route('login')->withErrors([
-                    'activation_needed' => 'Akun Anda belum diaktifkan. Silakan hubungi tim IT untuk mengaktifkan akun Anda.'
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'activation_needed' => 'Request ke IT Workflow telah diajukan secara otomatis.',
+                ]);
+            } elseif (!$userApp->is_active) {
+                // Akses masih ditangguhkan (Pending)
+                Auth::guard('web')->logout();
+                $request->session()->invalidate();
+                $request->session()->regenerateToken();
+
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'activation_needed' => 'Akses Anda ke Sistem IT masih dinonaktifkan. Hubungi Team IT untuk diaktifkan.',
                 ]);
             }
         }

@@ -21,9 +21,6 @@ export default defineConfig({
                     if (id.includes('node_modules/framer-motion/') || id.includes('node_modules/@hello-pangea/')) {
                         return 'ui';
                     }
-                    if (id.includes('node_modules/laravel-echo/') || id.includes('node_modules/pusher-js/')) {
-                        return 'echo';
-                    }
                 },
             },
         },

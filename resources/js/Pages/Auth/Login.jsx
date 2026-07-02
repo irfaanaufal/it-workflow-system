@@ -21,17 +21,13 @@ export default function Login({ status, canResetPassword }) {
             onSuccess: () => reset('password'),
             onError: (errs) => {
                 if (errs.activation_needed) {
-                    const alreadyShown = localStorage.getItem('activation_alert_shown');
-                    if (!alreadyShown) {
-                        localStorage.setItem('activation_alert_shown', '1');
-                        Swal.fire({
-                            icon: 'warning',
-                            title: 'Akun Belum Diaktifkan',
-                            text: errs.activation_needed,
-                            confirmButtonText: 'Notifikasi sudah dikirim ke admin',
-                            confirmButtonColor: '#6366f1',
-                        });
-                    }
+                    Swal.fire({
+                        icon: 'warning',
+                        title: 'Akun Belum Diaktifkan',
+                        text: errs.activation_needed,
+                        confirmButtonText: 'OK',
+                        confirmButtonColor: '#6366f1',
+                    });
                 }
                 reset('password');
             },

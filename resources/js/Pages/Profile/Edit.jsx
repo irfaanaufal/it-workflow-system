@@ -1,6 +1,6 @@
-﻿import React, { useState, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
-import { Head, useForm, usePage } from '@inertiajs/react';
+import { Head, useForm, usePage, router } from '@inertiajs/react';
 import { Transition } from '@headlessui/react';
 import axios from 'axios';
 
@@ -34,6 +34,7 @@ export default function Edit({ mustVerifyEmail, status }) {
             });
             setAvatarPreview(res.data.avatar_url);
             setAvatarSuccess(true);
+            router.reload({ only: ['auth'] });
             setTimeout(() => setAvatarSuccess(false), 3000);
         } catch (err) {
             setAvatarError(err.response?.data?.message || 'Gagal mengupload foto.');
