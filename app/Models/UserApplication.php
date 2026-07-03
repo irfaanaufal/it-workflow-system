@@ -18,6 +18,7 @@ class UserApplication extends Model
         'is_active',
         'approved_by',
         'approved_at',
+        'role_id',
     ];
 
     /**
@@ -55,5 +56,10 @@ class UserApplication extends Model
     public function approver(): BelongsTo
     {
         return $this->belongsTo(User::class, 'approved_by');
+    }
+
+    public function role(): BelongsTo
+    {
+        return $this->belongsTo(Role::class);
     }
 }

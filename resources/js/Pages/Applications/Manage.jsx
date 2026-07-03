@@ -45,9 +45,9 @@ export default function Manage({ applications = [] }) {
         return applications.filter(app => {
             if (!searchQuery) return true;
             const q = searchQuery.toLowerCase();
-            return app.name?.toLowerCase().includes(q) || 
-                   app.slug?.toLowerCase().includes(q) || 
-                   app.description?.toLowerCase().includes(q);
+            return app.name?.toLowerCase().includes(q) ||
+                app.slug?.toLowerCase().includes(q) ||
+                app.description?.toLowerCase().includes(q);
         });
     }, [applications, searchQuery]);
 
@@ -185,7 +185,7 @@ export default function Manage({ applications = [] }) {
                                 <thead>
                                     <tr className="bg-gray-50 dark:bg-zinc-900/60 border-b border-gray-150 dark:border-zinc-800 text-xs font-bold text-gray-550 dark:text-zinc-400 uppercase tracking-wider">
                                         <th className="py-4 px-6 w-1/4">Nama Aplikasi</th>
-                                        <th className="py-4 px-6 w-1/4">Link</th>
+                                        <th className="py-4 px-6 w-1/4">Slug</th>
                                         <th className="py-4 px-6 w-2/5">Deskripsi</th>
                                         <th className="py-4 px-6 text-right w-1/6">Aksi</th>
                                     </tr>
@@ -197,7 +197,7 @@ export default function Manage({ applications = [] }) {
                                                 {app.name}
                                             </td>
                                             <td className="py-4 px-6 whitespace-nowrap text-sm font-semibold text-indigo-600 dark:text-indigo-400">
-                                                    {app.slug}
+                                                {app.slug}
                                             </td>
                                             <td className="py-4 px-6 text-sm text-gray-600 dark:text-zinc-400">
                                                 {app.description || '-'}
@@ -262,11 +262,11 @@ export default function Manage({ applications = [] }) {
                         </div>
 
                         <div>
-                            <label className="block text-xs font-bold text-gray-400 dark:text-zinc-550 uppercase tracking-wider mb-2">Link Aplikasi</label>
+                            <label className="block text-xs font-bold text-gray-400 dark:text-zinc-550 uppercase tracking-wider mb-2">Slug</label>
                             <input
                                 type="text"
                                 value={addSlug}
-                                                onChange={(e) => setAddSlug(e.target.value)}
+                                onChange={(e) => setAddSlug(e.target.value)}
                                 required
                                 placeholder="https://example.com"
                                 className="w-full px-4 py-3 bg-gray-50 border border-gray-200 dark:bg-zinc-950 dark:border-zinc-800 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:text-white transition-all"
@@ -341,13 +341,12 @@ export default function Manage({ applications = [] }) {
                         </div>
 
                         <div>
-                            <label className="block text-xs font-bold text-gray-400 dark:text-zinc-555 uppercase tracking-wider mb-2">Link Aplikasi</label>
+                            <label className="block text-xs font-bold text-gray-400 dark:text-zinc-555 uppercase tracking-wider mb-2">Slug</label>
                             <input
                                 type="text"
                                 value={editSlug}
-                                                onChange={(e) => setEditSlug(e.target.value)}
-                                required
-                                className="w-full px-4 py-3 bg-gray-50 border border-gray-200 dark:bg-zinc-950 dark:border-zinc-800 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:text-white transition-all"
+                                readOnly
+                                className="w-full px-4 py-3 bg-gray-100 border border-gray-200 dark:bg-zinc-900 dark:border-zinc-700 rounded-xl text-sm text-gray-400 dark:text-zinc-500 cursor-not-allowed select-none transition-all"
                             />
                         </div>
 

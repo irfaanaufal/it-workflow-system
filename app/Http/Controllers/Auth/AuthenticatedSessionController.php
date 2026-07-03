@@ -35,10 +35,7 @@ class AuthenticatedSessionController extends Controller
         if (!$user->isAdmin()) {
             $app = Application::firstOrCreate(
                 ['slug' => 'it-workflow'],
-                [
-                    'name' => 'IT Workflow',
-                    'description' => 'Sistem manajemen workflow teknologi informasi.'
-                ]
+                ['name' => 'IT Workflow', 'description' => 'Sistem manajemen workflow teknologi informasi.']
             );
 
             $userApp = UserApplication::where('user_id', $user->id)

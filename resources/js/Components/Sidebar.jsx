@@ -12,7 +12,8 @@ export default function Sidebar({ mobileOpen = false, onMobileClose, unreadCount
         route().current('admin.applications.index')
     );
     const [rolesMenuOpen, setRolesMenuOpen] = useState(
-        route().current('admin.roles-permissions.index')
+        route().current('admin.roles-permissions.index') ||
+        route().current('admin.roles-permissions.briefing')
     );
     const expanded = hovered;
     const role = user.role_name;
@@ -35,7 +36,7 @@ export default function Sidebar({ mobileOpen = false, onMobileClose, unreadCount
     const activeTabParam = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('tab') : '';
     const isRoleTabActive = route().current('admin.roles-permissions.index') && (!activeTabParam || activeTabParam === 'role-permissions');
     const isUserTabActive = route().current('admin.roles-permissions.index') && activeTabParam === 'user-roles';
-    const isRolesActive = route().current('admin.roles-permissions.index');
+    const isRolesActive = route().current('admin.roles-permissions.index') || route().current('admin.roles-permissions.briefing');
     const isApplicationsActive = route().current('applications.index') || route().current('admin.applications.requests') || route().current('admin.applications.index');
 
     const avatarUrl = user.avatar_url || null;
@@ -112,9 +113,21 @@ export default function Sidebar({ mobileOpen = false, onMobileClose, unreadCount
             });
         }
 
-        // Superadmin only: Hak Akses & Peran
+        // Superadmin only: Role User dropdown
         if (isSuperAdmin) {
-            navItems.push({ href: route('admin.roles-permissions.index'), active: isRolesActive, label: 'Role User', icon: <IconLock /> });
+            const roleSubItems = [
+                { href: route('admin.roles-permissions.index'), active: route().current('admin.roles-permissions.index'), label: 'Sistem IT' },
+                { href: route('admin.roles-permissions.briefing'), active: route().current('admin.roles-permissions.briefing'), label: 'Sistem Briefing/Meeting' },
+            ];
+
+            navItems.push({
+                id: 'roles',
+                label: 'Role User',
+                icon: <IconLock />,
+                isDropdown: true,
+                active: isRolesActive,
+                subItems: roleSubItems
+            });
         }
     }
 

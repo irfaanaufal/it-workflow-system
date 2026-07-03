@@ -210,7 +210,9 @@ Route::middleware(['auth', 'applications.access'])->group(function () {
         Route::delete('/admin/systems/{id}', [\App\Http\Controllers\SystemPtsamController::class, 'destroy'])->name('admin.systems.destroy');
 
         Route::get('/admin/roles-permissions', [\App\Http\Controllers\RolePermissionController::class, 'index'])->name('admin.roles-permissions.index');
+        Route::get('/admin/roles-permissions/briefing', [\App\Http\Controllers\RolePermissionController::class, 'briefingRoles'])->name('admin.roles-permissions.briefing');
         Route::patch('/admin/users/{id}/role', [\App\Http\Controllers\RolePermissionController::class, 'updateUserRole'])->name('admin.users.update-role');
+        Route::patch('/admin/users/{id}/briefing-role', [\App\Http\Controllers\RolePermissionController::class, 'updateBriefingRole'])->name('admin.users.update-briefing-role');
     });
 
     Route::prefix('api')->group(function () {
