@@ -82,6 +82,11 @@ export default function Sidebar({ mobileOpen = false, onMobileClose, unreadCount
             navItems.push({ isDivider: true });
         }
 
+        // Superadmin only: Kelola Karyawan
+        if (isSuperAdmin) {
+            navItems.push({ href: route('admin.karyawan.index'), active: route().current('admin.karyawan.index'), label: 'Karyawan', icon: <IconKaryawan /> });
+        }
+
         // Akses Aplikasi Dropdown
         const appsSubItems = [
             { href: route('applications.index'), active: route().current('applications.index'), label: 'Akses Saya' }
@@ -383,6 +388,9 @@ function IconSystem() {
     return <svg width="18" height="18" viewBox="0 0 48 48" fill="none" stroke="currentColor" strokeWidth={4} strokeLinejoin="round" >
         <path d="M18 6H8a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2Zm0 22H8a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V30a2 2 0 0 0-2-2Zm17-8a7 7 0 1 0 0-14a7 7 0 0 0 0 14Zm5 8H30a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V30a2 2 0 0 0-2-2Z" />
     </svg>
+}
+function IconKaryawan() {
+    return <svg width="18" height="18" fill="currentColor" viewBox="0 0 16 16"><path d="M7 14s-1 0-1-1 1-4 5-4 5 3 5 4-1 1-1 1zm4-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6m-5.784 6A2.24 2.24 0 0 1 5 13c0-1.355.68-2.75 1.936-3.72A6.3 6.3 0 0 0 5 9c-4 0-5 3-5 4s1 1 1 1zM4.5 8a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5" /></svg>;
 }
 function IconLogout() {
     return <svg width="18" height="18" fill="currentColor" viewBox="0 0 16 16"><path d="M8.5 10c-.276 0-.5-.448-.5-1s.224-1 .5-1 .5.448.5 1-.224 1-.5 1" /><path d="M10.828.122A.5.5 0 0 1 11 .5V1h.5A1.5 1.5 0 0 1 13 2.5V15h1.5a.5.5 0 0 1 0 1h-13a.5.5 0 0 1 0-1H3V1.5a.5.5 0 0 1 .43-.495l7-1a.5.5 0 0 1 .398.117M11.5 2H11v13h1V2.5a.5.5 0 0 0-.5-.5M4 1.934V15h6V1.077z" /></svg>;

@@ -126,7 +126,7 @@ Route::get('/dashboard', function () {
         'tickets' => $allTickets,
         'currentYear' => (int) date('Y'),
     ]);
-})->middleware(['auth', 'verified', 'applications.access'])->name('dashboard');
+})->middleware(['auth', 'applications.access'])->name('dashboard');
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/applications', [ApplicationController::class, 'index'])->name('applications.index');
@@ -213,6 +213,10 @@ Route::middleware(['auth', 'applications.access'])->group(function () {
         Route::get('/admin/roles-permissions/briefing', [\App\Http\Controllers\RolePermissionController::class, 'briefingRoles'])->name('admin.roles-permissions.briefing');
         Route::patch('/admin/users/{id}/role', [\App\Http\Controllers\RolePermissionController::class, 'updateUserRole'])->name('admin.users.update-role');
         Route::patch('/admin/users/{id}/briefing-role', [\App\Http\Controllers\RolePermissionController::class, 'updateBriefingRole'])->name('admin.users.update-briefing-role');
+
+        Route::get('/admin/karyawan', [\App\Http\Controllers\KaryawanController::class, 'index'])->name('admin.karyawan.index');
+        Route::post('/admin/karyawan', [\App\Http\Controllers\KaryawanController::class, 'store'])->name('admin.karyawan.store');
+        Route::patch('/admin/karyawan/{fid}', [\App\Http\Controllers\KaryawanController::class, 'update'])->name('admin.karyawan.update');
     });
 
     Route::prefix('api')->group(function () {

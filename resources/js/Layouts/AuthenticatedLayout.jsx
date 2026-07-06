@@ -38,7 +38,13 @@ export default function AuthenticatedLayout({
     setFilterUrgency: propSetFilterUrgency,
     // Request approval status filter
     statusFilter: propStatusFilter,
-    setStatusFilter: propSetStatusFilter
+    setStatusFilter: propSetStatusFilter,
+    // Karyawan filter props
+    filterDivisi: propFilterDivisi,
+    setFilterDivisi: propSetFilterDivisi,
+    filterStatus: propFilterStatus,
+    setFilterStatus: propSetFilterStatus,
+    divisiOptions: propDivisiOptions
 }) {
     const user = usePage().props.auth.user;
     const isIT = user.is_it === true;
@@ -94,6 +100,16 @@ export default function AuthenticatedLayout({
     const [localStatusFilter, localSetStatusFilter] = useState('all');
     const statusFilter = propStatusFilter !== undefined ? propStatusFilter : localStatusFilter;
     const setStatusFilter = propSetStatusFilter !== undefined ? propSetStatusFilter : localSetStatusFilter;
+
+    const [localFilterDivisi, localSetFilterDivisi] = useState('all');
+    const filterDivisi = propFilterDivisi !== undefined ? propFilterDivisi : localFilterDivisi;
+    const setFilterDivisi = propSetFilterDivisi !== undefined ? propSetFilterDivisi : localSetFilterDivisi;
+
+    const [localFilterStatus, localSetFilterStatus] = useState('all');
+    const filterStatus = propFilterStatus !== undefined ? propFilterStatus : localFilterStatus;
+    const setFilterStatus = propSetFilterStatus !== undefined ? propSetFilterStatus : localSetFilterStatus;
+
+    const divisiOptions = propDivisiOptions || [];
 
     const [filterOpen, setFilterOpen] = useState(false);
     const filterRef = useRef(null);
@@ -403,6 +419,15 @@ export default function AuthenticatedLayout({
                             </button>
                         )}
 
+                        {/* + Tambah Karyawan */}
+                        {route().current('admin.karyawan.index') && (
+                            <button onClick={() => window.dispatchEvent(new CustomEvent('open-add-karyawan-modal'))}
+                                className="hidden md:flex h-9 md:h-10 px-3 md:px-4 rounded-xl bg-gray-900 dark:bg-zinc-100 text-white dark:text-zinc-950 hover:bg-black dark:hover:bg-white items-center gap-1.5 text-xs font-bold shadow-xs cursor-pointer transition">
+                                <span className="text-sm font-black leading-none">+</span>
+                                <span>Tambah Karyawan</span>
+                            </button>
+                        )}
+
                         {/* Search Pill (inline, round-full, matches Image 1) */}
                         {searchOpen && showSearch && (
                             <div className="relative animate-fadeIn hidden sm:block">
@@ -550,7 +575,7 @@ export default function AuthenticatedLayout({
                         </div>
 
                         {/* Standalone Filter Button (Only on History or Systems page, matches Image 2) */}
-                        {(route().current('history') || route().current('admin.systems.index') || route().current('admin.applications.requests')) && (
+                        {(route().current('history') || route().current('admin.systems.index') || route().current('admin.applications.requests') || route().current('admin.karyawan.index')) && (
                             <div className="relative" ref={filterRef}>
                                 <button onClick={() => setFilterOpen(p => !p)} title="Filter Data"
                                     className={`h-9 w-9 md:h-10 md:w-10 bg-white dark:bg-zinc-900 hover:bg-gray-100 dark:hover:bg-zinc-800 border border-gray-200 dark:border-zinc-800 rounded-xl flex items-center justify-center text-gray-500 dark:text-zinc-400 shadow-sm transition cursor-pointer shrink-0 ${filterOpen ? 'ring-2 ring-indigo-500/20 border-indigo-400' : ''}`}>
@@ -605,6 +630,39 @@ export default function AuthenticatedLayout({
                                                 </div>
                                             </>
                                         )}
+                                        {route().current('admin.karyawan.index') && (
+                                            <>
+                                                <div>
+                                                    <label className="block text-[9px] font-bold text-gray-400 dark:text-zinc-500 uppercase tracking-wider mb-1.5">Divisi</label>
+                                                    <select value={filterDivisi} onChange={e => setFilterDivisi(e.target.value)}
+                                                        className="w-full text-xs border border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-800 text-gray-800 dark:text-white rounded-lg px-2.5 py-1.5 focus:ring-1 focus:ring-indigo-500 outline-none cursor-pointer">
+                                                        <option value="all">Semua Divisi</option>
+                                                        {divisiOptions.map(d => (
+                                                            <option key={d} value={d}>{d}</option>
+                                                        ))}
+                                                    </select>
+                                                </div>
+                                                <div>
+                                                    <label className="block text-[9px] font-bold text-gray-400 dark:text-zinc-500 uppercase tracking-wider mb-1.5">Status</label>
+                                                    <div className="inline-flex rounded-lg border border-gray-200 dark:border-zinc-800 p-0.5 bg-gray-50 dark:bg-zinc-900 w-full">
+                                                        {['all', 'Active', 'Inactive'].map(s => (
+                                                            <button key={s}
+                                                                onClick={() => setFilterStatus(s)}
+                                                                className={`flex-1 px-2 py-1 text-xs font-semibold rounded-md transition-all cursor-pointer ${
+                                                                    filterStatus === s
+                                                                        ? 'bg-white dark:bg-zinc-800 text-gray-900 dark:text-white shadow-sm'
+                                                                        : 'text-gray-500 dark:text-zinc-400 hover:text-gray-900 dark:hover:text-zinc-200'
+                                                                }`}
+                                                            >
+                                                                {s === 'all' ? 'Semua' : s}
+                                                            </button>
+                                                        ))}
+                                                    </div>
+                                                </div>
+                                            </>
+                                        )}
+                                        {!route().current('admin.karyawan.index') && (
+                                        <>
                                         <div>
                                             <label className="block text-[9px] font-bold text-gray-400 dark:text-zinc-500 uppercase tracking-wider mb-1.5">
                                                 {route().current('admin.systems.index') ? 'Waktu Registrasi' : 'Waktu Laporan'}
@@ -652,6 +710,8 @@ export default function AuthenticatedLayout({
                                                     }} className="w-full text-xs border border-gray-250 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-800 text-gray-800 dark:text-white rounded-lg px-2.5 py-1.5 focus:ring-1 focus:ring-indigo-500 outline-none" />
                                                 </div>
                                             </div>
+                                        )}
+                                        </>
                                         )}
                                     </div>
                                 )}
@@ -930,6 +990,19 @@ export default function AuthenticatedLayout({
                         onClick={() => window.dispatchEvent(new CustomEvent('open-add-system-modal'))}
                         className="w-12 h-12 rounded-full bg-[#7a7a7a] dark:bg-zinc-800 text-white flex items-center justify-center shadow-lg hover:scale-105 transition active:scale-95 cursor-pointer"
                         title="Tambah Sistem"
+                    >
+                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />
+                        </svg>
+                    </button>
+                )}
+
+                {/* FAB for Tambah Karyawan */}
+                {route().current('admin.karyawan.index') && (
+                    <button
+                        onClick={() => window.dispatchEvent(new CustomEvent('open-add-karyawan-modal'))}
+                        className="w-12 h-12 rounded-full bg-[#7a7a7a] dark:bg-zinc-800 text-white flex items-center justify-center shadow-lg hover:scale-105 transition active:scale-95 cursor-pointer"
+                        title="Tambah Karyawan"
                     >
                         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3">
                             <path strokeLinecap="round" strokeLinejoin="round" d="M12 4v16m8-8H4" />

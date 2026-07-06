@@ -8,20 +8,22 @@ return new class extends Migration
 {
     public function up(): void
     {
-        Schema::create('log_notifikasi', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('user_id')->constrained()->cascadeOnDelete();
-            $table->foreignId('ticket_id')->nullable()->constrained('tickets')->nullOnDelete();
-            $table->string('recipient_type', 20)->default('user');
-            $table->string('title');
-            $table->text('message');
-            $table->string('status')->nullable();
-            $table->timestamp('read_at')->nullable();
-            $table->timestamps();
+        if (!Schema::hasTable('log_notifikasi')) {
+            Schema::create('log_notifikasi', function (Blueprint $table) {
+                $table->id();
+                $table->foreignId('user_id')->constrained()->cascadeOnDelete();
+                $table->foreignId('ticket_id')->nullable()->constrained('tickets')->nullOnDelete();
+                $table->string('recipient_type', 20)->default('user');
+                $table->string('title');
+                $table->text('message');
+                $table->string('status')->nullable();
+                $table->timestamp('read_at')->nullable();
+                $table->timestamps();
 
-            $table->index(['user_id', 'read_at']);
-            $table->index(['user_id', 'created_at']);
-        });
+                $table->index(['user_id', 'read_at']);
+                $table->index(['user_id', 'created_at']);
+            });
+        }
     }
 
     public function down(): void

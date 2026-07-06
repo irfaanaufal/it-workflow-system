@@ -88,6 +88,11 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
+        // Auto-verify email for superadmin & admin if not yet verified
+        if ($user->isAdmin() && is_null($user->email_verified_at)) {
+            $user->update(['email_verified_at' => now()]);
+        }
+
         if ($user->isSuperAdmin()) {
             $redirectUrl = route('dashboard');
         } elseif ($user->isAdmin()) {
