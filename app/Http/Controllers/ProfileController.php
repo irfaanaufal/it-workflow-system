@@ -103,16 +103,23 @@ class ProfileController extends Controller
 
         // Delete old avatar if exists
         if ($user->avatar_path) {
-            Storage::disk('public')->delete($user->avatar_path);
+            $oldFile = public_path($user->avatar_path);
+            if (file_exists($oldFile)) {
+                unlink($oldFile);
+            }
         }
 
-        $path = $request->file('avatar')->store('avatars', 'public');
+        // Save to public/profile-photos/
+        $filename = 'avatar_' . $user->id . '_' . time() . '.' . $request->file('avatar')->getClientOriginalExtension();
+        $request->file('avatar')->move(public_path('profile-photos'), $filename);
+        $path = 'profile-photos/' . $filename;
+
         $user->avatar_path = $path;
         $user->save();
 
         return response()->json([
             'success'    => true,
-            'avatar_url' => asset('storage/' . $path),
+            'avatar_url' => asset($path),
         ]);
     }
 

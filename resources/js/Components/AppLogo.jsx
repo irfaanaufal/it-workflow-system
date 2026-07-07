@@ -2,13 +2,14 @@ import { usePage } from '@inertiajs/react';
 
 export default function AppLogo({ collapsed = false, className = '' }) {
     const { asset_url } = usePage().props;
+    const itSystemUrl = import.meta.env.VITE_ITSYSTEM_URL;
 
     return (
         <div className={`flex items-center gap-3 overflow-hidden ${className}`}>
             {/* Logo perusahaan */}
             <div className="w-10 h-10 shrink-0 flex items-center justify-center">
                 <img
-                    src={`${asset_url}images/logo.png`}
+                    src={`${itSystemUrl}/images/logo.png`}
                     alt="Logo Perusahaan"
                     className="w-10 h-10 object-contain"
                 />

@@ -129,9 +129,6 @@ Route::get('/dashboard', function () {
 })->middleware(['auth', 'applications.access'])->name('dashboard');
 
 Route::middleware(['auth', 'verified'])->group(function () {
-    Route::get('/applications', [ApplicationController::class, 'index'])->name('applications.index');
-    Route::post('/applications/request', [ApplicationController::class, 'requestAccess'])->name('applications.request');
-    
     Route::get('/admin/applications/requests', [ApplicationController::class, 'requests'])->name('admin.applications.requests');
     Route::patch('/applications/toggle', [ApplicationController::class, 'toggleAccess'])->name('applications.toggle');
     
@@ -203,22 +200,6 @@ Route::middleware(['auth', 'applications.access'])->group(function () {
         })->name('admin.ticket-detail');
     });
 
-    Route::middleware('superadmin')->group(function () {
-        Route::get('/admin/systems', [\App\Http\Controllers\SystemPtsamController::class, 'index'])->name('admin.systems.index');
-        Route::post('/admin/systems', [\App\Http\Controllers\SystemPtsamController::class, 'store'])->name('admin.systems.store');
-        Route::patch('/admin/systems/{id}', [\App\Http\Controllers\SystemPtsamController::class, 'update'])->name('admin.systems.update');
-        Route::delete('/admin/systems/{id}', [\App\Http\Controllers\SystemPtsamController::class, 'destroy'])->name('admin.systems.destroy');
-
-        Route::get('/admin/roles-permissions', [\App\Http\Controllers\RolePermissionController::class, 'index'])->name('admin.roles-permissions.index');
-        Route::get('/admin/roles-permissions/briefing', [\App\Http\Controllers\RolePermissionController::class, 'briefingRoles'])->name('admin.roles-permissions.briefing');
-        Route::patch('/admin/users/{id}/role', [\App\Http\Controllers\RolePermissionController::class, 'updateUserRole'])->name('admin.users.update-role');
-        Route::patch('/admin/users/{id}/briefing-role', [\App\Http\Controllers\RolePermissionController::class, 'updateBriefingRole'])->name('admin.users.update-briefing-role');
-
-        Route::get('/admin/karyawan', [\App\Http\Controllers\KaryawanController::class, 'index'])->name('admin.karyawan.index');
-        Route::post('/admin/karyawan', [\App\Http\Controllers\KaryawanController::class, 'store'])->name('admin.karyawan.store');
-        Route::patch('/admin/karyawan/{fid}', [\App\Http\Controllers\KaryawanController::class, 'update'])->name('admin.karyawan.update');
-    });
-
     Route::prefix('api')->group(function () {
         Route::post('/tickets', [TicketController::class, 'store']);
         Route::get('/tickets', [TicketController::class, 'index']);
@@ -241,11 +222,27 @@ Route::middleware(['auth', 'applications.access'])->group(function () {
         Route::get('/tickets/{id}/timeline', [LogNotifikasiController::class, 'ticketTimeline']);
 
         Route::patch('/tickets/{id}/uat-approve', [TicketController::class, 'uatApprove']);
-        Route::patch('/tickets/{id}/uat-revise',  [TicketController::class, 'uatRevise']);
+        Route::patch('/tickets/{id}/uat-revise', [TicketController::class, 'uatRevise']);
 
         Route::patch('/tickets/{id}', [TicketController::class, 'update']);
 
         Route::delete('/tickets/{id}', [TicketController::class, 'softDelete']);
+    });
+
+    Route::middleware('superadmin')->group(function () {
+        Route::get('/admin/systems', [\App\Http\Controllers\SystemPtsamController::class, 'index'])->name('admin.systems.index');
+        Route::post('/admin/systems', [\App\Http\Controllers\SystemPtsamController::class, 'store'])->name('admin.systems.store');
+        Route::patch('/admin/systems/{id}', [\App\Http\Controllers\SystemPtsamController::class, 'update'])->name('admin.systems.update');
+        Route::delete('/admin/systems/{id}', [\App\Http\Controllers\SystemPtsamController::class, 'destroy'])->name('admin.systems.destroy');
+
+        Route::get('/admin/roles-permissions', [\App\Http\Controllers\RolePermissionController::class, 'index'])->name('admin.roles-permissions.index');
+        Route::get('/admin/roles-permissions/briefing', [\App\Http\Controllers\RolePermissionController::class, 'briefingRoles'])->name('admin.roles-permissions.briefing');
+        Route::patch('/admin/users/{id}/role', [\App\Http\Controllers\RolePermissionController::class, 'updateUserRole'])->name('admin.users.update-role');
+        Route::patch('/admin/users/{id}/briefing-role', [\App\Http\Controllers\RolePermissionController::class, 'updateBriefingRole'])->name('admin.users.update-briefing-role');
+
+        Route::get('/admin/karyawan', [\App\Http\Controllers\KaryawanController::class, 'index'])->name('admin.karyawan.index');
+        Route::post('/admin/karyawan', [\App\Http\Controllers\KaryawanController::class, 'store'])->name('admin.karyawan.store');
+        Route::patch('/admin/karyawan/{fid}', [\App\Http\Controllers\KaryawanController::class, 'update'])->name('admin.karyawan.update');
     });
 });
 

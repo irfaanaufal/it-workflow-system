@@ -7,7 +7,6 @@ export default function Sidebar({ mobileOpen = false, onMobileClose, unreadCount
     const user = usePage().props.auth.user;
     const [hovered, setHovered] = useState(false);
     const [appsMenuOpen, setAppsMenuOpen] = useState(
-        route().current('applications.index') ||
         route().current('admin.applications.requests') ||
         route().current('admin.applications.index')
     );
@@ -37,7 +36,7 @@ export default function Sidebar({ mobileOpen = false, onMobileClose, unreadCount
     const isRoleTabActive = route().current('admin.roles-permissions.index') && (!activeTabParam || activeTabParam === 'role-permissions');
     const isUserTabActive = route().current('admin.roles-permissions.index') && activeTabParam === 'user-roles';
     const isRolesActive = route().current('admin.roles-permissions.index') || route().current('admin.roles-permissions.briefing');
-    const isApplicationsActive = route().current('applications.index') || route().current('admin.applications.requests') || route().current('admin.applications.index');
+    const isApplicationsActive = route().current('admin.applications.requests') || route().current('admin.applications.index');
 
     const avatarUrl = user.avatar_url || null;
     const initials = user.name.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase();
@@ -87,20 +86,15 @@ export default function Sidebar({ mobileOpen = false, onMobileClose, unreadCount
             navItems.push({ href: route('admin.karyawan.index'), active: route().current('admin.karyawan.index'), label: 'Karyawan', icon: <IconKaryawan /> });
         }
 
-        // Akses Aplikasi Dropdown
-        const appsSubItems = [
-            { href: route('applications.index'), active: route().current('applications.index'), label: 'Akses Saya' }
-        ];
+        // Akses Aplikasi Dropdown (superadmin only)
+        const appsSubItems = [];
 
-        if (isSuperAdmin || isAdmin) {
+        if (isSuperAdmin) {
             appsSubItems.push({ href: route('admin.applications.requests'), active: route().current('admin.applications.requests'), label: 'Kelola Permintaan' });
-        }
-
-        if (isSuperAdmin || isAdmin) {
             appsSubItems.push({ href: route('admin.applications.index'), active: route().current('admin.applications.index'), label: 'Kelola Aplikasi' });
         }
 
-        if (appsSubItems.length > 1) {
+        if (appsSubItems.length > 0) {
             navItems.push({
                 id: 'apps',
                 label: 'Hak Akses',
@@ -109,20 +103,13 @@ export default function Sidebar({ mobileOpen = false, onMobileClose, unreadCount
                 active: isApplicationsActive,
                 subItems: appsSubItems
             });
-        } else {
-            navItems.push({
-                href: route('applications.index'),
-                active: isApplicationsActive,
-                label: 'Hak Akses',
-                icon: <IconApps />
-            });
         }
 
         // Superadmin only: Role User dropdown
         if (isSuperAdmin) {
             const roleSubItems = [
                 { href: route('admin.roles-permissions.index'), active: route().current('admin.roles-permissions.index'), label: 'Sistem IT' },
-                { href: route('admin.roles-permissions.briefing'), active: route().current('admin.roles-permissions.briefing'), label: 'Sistem Briefing/Meeting' },
+                // { href: route('admin.roles-permissions.briefing'), active: route().current('admin.roles-permissions.briefing'), label: 'Sistem Briefing/Meeting' },
             ];
 
             navItems.push({

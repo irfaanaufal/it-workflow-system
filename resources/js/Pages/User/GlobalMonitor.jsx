@@ -121,7 +121,7 @@ export default function GlobalMonitor() {
                                                 </p>
                                                 <button
                                                     type="button"
-                                                    onClick={() => router.visit(`/tickets/${item.id}`)}
+                                                    onClick={() => router.visit(route('tickets.detail', item.id))}
                                                     className="text-[10px] font-bold text-gray-400 hover:text-gray-700 dark:text-zinc-500 dark:hover:text-zinc-200 underline underline-offset-4 cursor-pointer shrink-0"
                                                 >
                                                     Detail

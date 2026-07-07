@@ -24,7 +24,7 @@ class User extends Authenticatable
 
     public function getAvatarUrlAttribute(): ?string
     {
-        return $this->avatar_path ? asset('storage/' . $this->avatar_path) : null;
+        return $this->avatar_path ? asset($this->avatar_path) : null;
     }
 
     protected function casts(): array

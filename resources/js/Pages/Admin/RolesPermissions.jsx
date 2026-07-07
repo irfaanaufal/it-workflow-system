@@ -77,7 +77,7 @@ export default function RolesPermissions({ roles = [], users = [] }) {
                                 <tbody className="divide-y divide-gray-100 dark:divide-zinc-800/80">
                                     {filteredUsers.map((u) => {
                                         const initials = u.name?.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase() || '?';
-                                        const avatarUrl = u.avatar_path ? `/storage/${u.avatar_path}` : null;
+                                        const avatarUrl = u.avatar_url || null;
 
                                         return (
                                             <tr key={u.id} className="hover:bg-gray-50/50 dark:hover:bg-zinc-900/40 transition-colors">

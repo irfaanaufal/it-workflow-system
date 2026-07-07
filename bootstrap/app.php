@@ -18,6 +18,10 @@ return Application::configure(basePath: dirname(__DIR__))
             \Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets::class,
         ]);
 
+        $middleware->validateCsrfTokens(except: [
+            'api/*',
+        ]);
+
         $middleware->alias([
             'admin.it' => \App\Http\Middleware\CheckAdminIT::class,
             'superadmin' => \App\Http\Middleware\CheckSuperAdmin::class,

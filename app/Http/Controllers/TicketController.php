@@ -254,7 +254,7 @@ class TicketController extends Controller
             ->map(function ($ticket) {
                 if ($ticket->adminIt && $ticket->adminIt->user) {
                     $ticket->adminIt->user->avatar_url = $ticket->adminIt->user->avatar_path
-                        ? asset('storage/' . $ticket->adminIt->user->avatar_path)
+                        ? asset($ticket->adminIt->user->avatar_path)
                         : null;
                 }
                 return $ticket;
@@ -300,7 +300,7 @@ class TicketController extends Controller
 
         if ($ticket->adminIt && $ticket->adminIt->user) {
             $ticket->adminIt->user->avatar_url = $ticket->adminIt->user->avatar_path
-                ? asset('storage/' . $ticket->adminIt->user->avatar_path)
+                ? asset($ticket->adminIt->user->avatar_path)
                 : null;
         }
 
@@ -309,8 +309,16 @@ class TicketController extends Controller
 
     private function broadcastTicketUpdate(Ticket $ticket, string $action): void
     {
-        $ticket->loadMissing(['karyawan', 'adminIt']);
-        $this->storeNotificationLogs($ticket, $action);
+        try {
+            $ticket->loadMissing(['karyawan', 'adminIt']);
+            $this->storeNotificationLogs($ticket, $action);
+        } catch (Throwable $e) {
+            Log::warning('Notification logs failed.', [
+                'ticket_id' => $ticket->id,
+                'action' => $action,
+                'error' => $e->getMessage(),
+            ]);
+        }
 
         try {
             event(new TicketStatusUpdated($ticket));

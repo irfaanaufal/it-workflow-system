@@ -32,16 +32,16 @@ class CheckITWorkflowAccess
         if (!$hasAccess) {
             if ($request->expectsJson() || $request->header('X-Inertia')) {
                 if ($request->header('X-Inertia')) {
-                    return redirect()->route('applications.index')
-                        ->withErrors(['message' => 'Anda tidak memiliki akses aktif ke aplikasi IT Workflow.']);
+                    return redirect()->route('login')
+                        ->withErrors(['activation_needed' => 'Anda tidak memiliki akses aktif ke aplikasi IT Workflow. Hubungi Team IT untuk diaktifkan.']);
                 }
                 return response()->json([
                     'message' => 'Anda tidak memiliki akses aktif ke aplikasi IT Workflow.'
                 ], 403);
             }
 
-            return redirect()->route('applications.index')
-                ->withErrors(['message' => 'Anda tidak memiliki akses aktif ke aplikasi IT Workflow.']);
+            return redirect()->route('login')
+                ->withErrors(['activation_needed' => 'Anda tidak memiliki akses aktif ke aplikasi IT Workflow. Hubungi Team IT untuk diaktifkan.']);
         }
 
         return $next($request);

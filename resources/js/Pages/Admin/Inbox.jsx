@@ -90,7 +90,7 @@ export default function Inbox() {
                 ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 pt-2">
                         {filteredTickets.map(ticket => (
-                            <InboxCard key={ticket.id} ticket={ticket} onTake={handleTake} onDetail={() => router.visit(`/admin/tickets/${ticket.id}`)} />
+                            <InboxCard key={ticket.id} ticket={ticket} onTake={handleTake} onDetail={() => router.visit(route('admin.ticket-detail', ticket.id))} />
                         ))}
                     </div>
                 )}

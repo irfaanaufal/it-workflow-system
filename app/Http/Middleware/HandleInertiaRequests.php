@@ -45,7 +45,7 @@ class HandleInertiaRequests extends Middleware
                     ->where('is_active', true)
                     ->exists();
             $userData['avatar_url'] = $user->avatar_path
-                ? asset('storage/' . $user->avatar_path)
+                ? asset($user->avatar_path)
                 : null;
         }
 

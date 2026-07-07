@@ -82,7 +82,7 @@ export default function Requests({ allRequests = [] }) {
                                 <tbody className="divide-y divide-gray-100 dark:divide-zinc-800/80">
                                     {filteredRequests.map((req) => {
                                         const initials = req.user?.name?.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase() || '?';
-                                        const avatarUrl = req.user?.avatar_path ? `/storage/${req.user.avatar_path}` : null;
+                                        const avatarUrl = req.user?.avatar_url || null;
                                         const isPending = !req.is_active;
 
                                         return (

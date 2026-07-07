@@ -3,7 +3,6 @@
 namespace App\Http\Controllers;
 
 use App\Models\Application;
-use App\Models\LogNotifikasi;
 use App\Models\User;
 use App\Models\UserApplication;
 use Illuminate\Http\RedirectResponse;
@@ -13,58 +12,6 @@ use Inertia\Response;
 
 class ApplicationController extends Controller
 {
-    public function index(): Response
-    {
-        $user = auth()->user();
-
-        $applications = Application::with(['users' => function ($query) use ($user) {
-            $query->where('users.id', $user->id);
-        }])->get();
-
-        return Inertia::render('Applications/Index', [
-            'applications' => $applications,
-        ]);
-    }
-
-    public function requestAccess(Request $request): RedirectResponse
-    {
-        $validated = $request->validate([
-            'application_id' => ['required', 'exists:applications,id'],
-        ]);
-
-        $userApp = UserApplication::updateOrCreate(
-            [
-                'user_id' => auth()->id(),
-                'application_id' => $validated['application_id'],
-            ],
-            [
-                'is_active' => false,
-            ]
-        );
-
-        if ($userApp->wasRecentlyCreated) {
-            $user = auth()->user();
-            $app = Application::find($validated['application_id']);
-            $adminUsers = User::whereHas('role', fn($q) => $q->whereIn('name', ['superadmin', 'admin']))->get();
-            $adminUsers->each(function ($admin) use ($user, $app) {
-                LogNotifikasi::create([
-                    'user_id' => $admin->id,
-                    'ticket_id' => null,
-                    'actor_user_id' => $user->id,
-                    'actor_name' => $user->name,
-                    'recipient_type' => 'admin',
-                    'action' => 'new_access_request',
-                    'title' => 'Permintaan akses baru',
-                    'message' => $user->name . ' mengajukan akses ke aplikasi "' . $app->name . '".',
-                    'status' => null,
-                    'visible_in_bell' => true,
-                ]);
-            });
-        }
-
-        return redirect()->back()->with('success', 'Permintaan akses berhasil dikirim.');
-    }
-
     public function requests(): Response
     {
         $currentUser = auth()->user();

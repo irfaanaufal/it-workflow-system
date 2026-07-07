@@ -79,7 +79,7 @@ export default function RolesBriefing({ roles = [], userApps = [] }) {
                                     {filtered.map((ua) => {
                                         const u = ua.user;
                                         const initials = u?.name?.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase() || '?';
-                                        const avatarUrl = u?.avatar_path ? `/storage/${u.avatar_path}` : null;
+                                        const avatarUrl = u?.avatar_url || null;
 
                                         return (
                                             <tr key={ua.id} className="hover:bg-gray-50/50 dark:hover:bg-zinc-900/40 transition-colors">
