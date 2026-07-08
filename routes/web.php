@@ -240,6 +240,9 @@ Route::middleware(['auth', 'applications.access'])->group(function () {
         Route::patch('/admin/users/{id}/role', [\App\Http\Controllers\RolePermissionController::class, 'updateUserRole'])->name('admin.users.update-role');
         Route::patch('/admin/users/{id}/briefing-role', [\App\Http\Controllers\RolePermissionController::class, 'updateBriefingRole'])->name('admin.users.update-briefing-role');
 
+        Route::get('/admin/roles-permissions/reminder', [\App\Http\Controllers\RolePermissionController::class, 'reminderRoles'])->name('admin.roles-permissions.reminder');
+        Route::patch('/admin/users/{id}/reminder-role', [\App\Http\Controllers\RolePermissionController::class, 'updateReminderRole'])->name('admin.users.update-reminder-role');
+
         Route::get('/admin/karyawan', [\App\Http\Controllers\KaryawanController::class, 'index'])->name('admin.karyawan.index');
         Route::post('/admin/karyawan', [\App\Http\Controllers\KaryawanController::class, 'store'])->name('admin.karyawan.store');
         Route::patch('/admin/karyawan/{fid}', [\App\Http\Controllers\KaryawanController::class, 'update'])->name('admin.karyawan.update');

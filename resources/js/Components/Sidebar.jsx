@@ -12,7 +12,8 @@ export default function Sidebar({ mobileOpen = false, onMobileClose, unreadCount
     );
     const [rolesMenuOpen, setRolesMenuOpen] = useState(
         route().current('admin.roles-permissions.index') ||
-        route().current('admin.roles-permissions.briefing')
+        route().current('admin.roles-permissions.briefing') ||
+        route().current('admin.roles-permissions.reminder')
     );
     const expanded = hovered;
     const role = user.role_name;
@@ -35,7 +36,7 @@ export default function Sidebar({ mobileOpen = false, onMobileClose, unreadCount
     const activeTabParam = typeof window !== 'undefined' ? new URLSearchParams(window.location.search).get('tab') : '';
     const isRoleTabActive = route().current('admin.roles-permissions.index') && (!activeTabParam || activeTabParam === 'role-permissions');
     const isUserTabActive = route().current('admin.roles-permissions.index') && activeTabParam === 'user-roles';
-    const isRolesActive = route().current('admin.roles-permissions.index') || route().current('admin.roles-permissions.briefing');
+    const isRolesActive = route().current('admin.roles-permissions.index') || route().current('admin.roles-permissions.briefing') || route().current('admin.roles-permissions.reminder');
     const isApplicationsActive = route().current('admin.applications.requests') || route().current('admin.applications.index');
 
     const avatarUrl = user.avatar_url || null;
@@ -110,6 +111,7 @@ export default function Sidebar({ mobileOpen = false, onMobileClose, unreadCount
             const roleSubItems = [
                 { href: route('admin.roles-permissions.index'), active: route().current('admin.roles-permissions.index'), label: 'Sistem IT' },
                 // { href: route('admin.roles-permissions.briefing'), active: route().current('admin.roles-permissions.briefing'), label: 'Sistem Briefing/Meeting' },
+                { href: route('admin.roles-permissions.reminder'), active: route().current('admin.roles-permissions.reminder'), label: 'Sistem Reminder' },
             ];
 
             navItems.push({
