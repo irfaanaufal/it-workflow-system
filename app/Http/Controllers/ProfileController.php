@@ -96,7 +96,7 @@ class ProfileController extends Controller
     public function updateAvatar(Request $request): \Illuminate\Http\JsonResponse
     {
         $request->validate([
-            'avatar' => ['required', 'image', 'mimes:jpg,jpeg,png,webp', 'max:2048'],
+            'avatar' => ['required', 'image', 'mimes:jpg,jpeg,png,webp,gif', 'max:3000'],
         ]);
 
         $user = $request->user();

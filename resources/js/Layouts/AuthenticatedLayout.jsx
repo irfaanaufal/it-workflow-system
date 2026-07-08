@@ -47,6 +47,7 @@ export default function AuthenticatedLayout({
     divisiOptions: propDivisiOptions
 }) {
     const user = usePage().props.auth.user;
+    const asset_url = (usePage().props.asset_url || '').replace(/\/+$/, '');
     const isIT = user.is_it === true;
     const isDashboardOrKanban = route().current('dashboard') || route().current('admin.kanban');
 
@@ -227,7 +228,7 @@ export default function AuthenticatedLayout({
                     path = n.ticket_id ? `/tickets/${n.ticket_id}` : '/global-monitor';
             }
         }
-        router.visit(path);
+        router.visit(asset_url + '/index.php' + path);
     };
     /* â”€â”€ Search â”€â”€ */
     useEffect(() => {

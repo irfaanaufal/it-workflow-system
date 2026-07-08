@@ -24,6 +24,7 @@ return Application::configure(basePath: dirname(__DIR__))
 
         $middleware->alias([
             'admin.it' => \App\Http\Middleware\CheckAdminIT::class,
+            'admin.it.ticket' => \App\Http\Middleware\CheckAdminITTicket::class,
             'superadmin' => \App\Http\Middleware\CheckSuperAdmin::class,
             'applications.access' => \App\Http\Middleware\CheckITWorkflowAccess::class,
         ]);

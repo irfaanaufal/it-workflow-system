@@ -19,6 +19,7 @@ export default function Sidebar({ mobileOpen = false, onMobileClose, unreadCount
     const role = user.role_name;
     const isSuperAdmin = role === 'superadmin';
     const isAdmin = role === 'superadmin' || role === 'admin';
+    const isItSuperAdmin = isSuperAdmin && user.divisi === 'IT';
 
     const handleLogout = (e) => {
         e.preventDefault();
@@ -50,23 +51,21 @@ export default function Sidebar({ mobileOpen = false, onMobileClose, unreadCount
         // Dashboard: admin view (superadmin & admin) | user view (user)
         navItems.push({ href: route('dashboard'), active: isDashboardActive, label: 'Dashboard', icon: <IconHome /> });
 
-        // Superadmin & Admin: Inbox
-        if (isAdmin) {
-            navItems.push({ href: route('admin.inbox'), active: isInboxActive, label: 'Inbox', icon: <IconInbox /> });
+        // All roles: My Requests
+        navItems.push({ href: route('my-requests'), active: isMyReqActive, label: 'My Requests', icon: <IconClipboard /> });
+
+        // Superadmin IT: Inbox
+        if (isItSuperAdmin) {
+            navItems.push({ href: route('admin.inbox'), active: isInboxActive, label: 'Inbox', icon: <IconMessage /> });
         }
 
-        // Superadmin & Admin: Kanban
-        if (isAdmin) {
+        // Superadmin IT: Kanban
+        if (isItSuperAdmin) {
             navItems.push({ href: route('admin.kanban'), active: isKanbanActive, label: 'Kanban', icon: <IconKanban /> });
         }
 
-        // User: My Requests
-        if (!isAdmin) {
-            navItems.push({ href: route('my-requests'), active: isMyReqActive, label: 'My Requests', icon: <IconInbox /> });
-        }
-
-        // User only: Global Monitor
-        if (!isAdmin) {
+        // Non-IT Superadmin: Global Monitor
+        if (!isItSuperAdmin) {
             navItems.push({ href: route('global-monitor'), active: isGlobalActive, label: 'Global Monitor', icon: <IconKanban /> });
         }
 
@@ -366,6 +365,14 @@ function IconHome() {
 }
 function IconInbox() {
     return <svg width="18" height="18" fill="currentColor" viewBox="0 0 16 16"><path d="M4.98 1a.5.5 0 0 0-.39.188L1.54 5H6a.5.5 0 0 1 .5.5 1.5 1.5 0 0 0 3 0A.5.5 0 0 1 10 5h4.46l-3.05-3.812A.5.5 0 0 0 11.02 1zm9.954 5H10.45a2.5 2.5 0 0 1-4.9 0H1.066l.32 2.562A.5.5 0 0 0 1.884 9h12.234a.5.5 0 0 0 .496-.438zM3.809.563A1.5 1.5 0 0 1 4.981 0h6.038a1.5 1.5 0 0 1 1.172.563l3.7 4.625a.5.5 0 0 1 .105.374l-.39 3.124A1.5 1.5 0 0 1 14.117 10H1.883A1.5 1.5 0 0 1 .394 8.686l-.39-3.124a.5.5 0 0 1 .106-.374zM.125 11.17A.5.5 0 0 1 .5 11H6a.5.5 0 0 1 .5.5 1.5 1.5 0 0 0 3 0 .5.5 0 0 1 .5-.5h5.5a.5.5 0 0 1 .496.562l-.39 3.124A1.5 1.5 0 0 1 14.117 16H1.883a1.5 1.5 0 0 1-1.489-1.314l-.39-3.124a.5.5 0 0 1 .121-.393zm.941.83.32 2.562a.5.5 0 0 0 .497.438h12.234a.5.5 0 0 0 .496-.438l.32-2.562H10.45a2.5 2.5 0 0 1-4.9 0z" /></svg>;
+}
+function IconMessage() {
+    return <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" class="bi bi-envelope-heart" viewBox="0 0 16 16">
+        <path fill-rule="evenodd" d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2zm2-1a1 1 0 0 0-1 1v.217l3.235 1.94a2.8 2.8 0 0 0-.233 1.027L1 5.384v5.721l3.453-2.124q.219.416.55.835l-3.97 2.443A1 1 0 0 0 2 13h12a1 1 0 0 0 .966-.741l-3.968-2.442q.33-.421.55-.836L15 11.105V5.383l-3.002 1.801a2.8 2.8 0 0 0-.233-1.026L15 4.217V4a1 1 0 0 0-1-1zm6 2.993c1.664-1.711 5.825 1.283 0 5.132-5.825-3.85-1.664-6.843 0-5.132" /></svg>;
+}
+function IconClipboard() {
+    return <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" class="bi bi-inboxes-fill" viewBox="0 0 16 16">
+        <path d="M4.98 1a.5.5 0 0 0-.39.188L1.54 5H6a.5.5 0 0 1 .5.5 1.5 1.5 0 0 0 3 0A.5.5 0 0 1 10 5h4.46l-3.05-3.812A.5.5 0 0 0 11.02 1zM3.81.563A1.5 1.5 0 0 1 4.98 0h6.04a1.5 1.5 0 0 1 1.17.563l3.7 4.625a.5.5 0 0 1 .106.374l-.39 3.124A1.5 1.5 0 0 1 14.117 10H1.883A1.5 1.5 0 0 1 .394 8.686l-.39-3.124a.5.5 0 0 1 .106-.374zM.125 11.17A.5.5 0 0 1 .5 11H6a.5.5 0 0 1 .5.5 1.5 1.5 0 0 0 3 0 .5.5 0 0 1 .5-.5h5.5a.5.5 0 0 1 .496.562l-.39 3.124A1.5 1.5 0 0 1 14.117 16H1.883a1.5 1.5 0 0 1-1.489-1.314l-.39-3.124a.5.5 0 0 1 .121-.393z" /></svg>;
 }
 function IconKanban() {
     return <svg width="18" height="18" fill="currentColor" viewBox="0 0 16 16"><path d="M13.5 1a1 1 0 0 1 1 1v12a1 1 0 0 1-1 1h-11a1 1 0 0 1-1-1V2a1 1 0 0 1 1-1zm-11-1a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h11a2 2 0 0 0 2-2V2a2 2 0 0 0-2-2z" /><path d="M6.5 3a1 1 0 0 1 1-1h1a1 1 0 0 1 1 1v3a1 1 0 0 1-1 1h-1a1 1 0 0 1-1-1zm-4 0a1 1 0 0 1 1-1h1a1 1 0 0 1 1 1v7a1 1 0 0 1-1 1h-1a1 1 0 0 1-1-1zm8 0a1 1 0 0 1 1-1h1a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1h-1a1 1 0 0 1-1-1z" /></svg>;

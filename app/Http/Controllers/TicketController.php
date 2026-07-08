@@ -137,6 +137,35 @@ class TicketController extends Controller
         ]);
     }
 
+    public function rejectTicket(Request $request, $id): JsonResponse
+    {
+        $request->validate([
+            'reject_reason' => ['required', 'string', 'max:500'],
+        ]);
+
+        $ticket = Ticket::findOrFail($id);
+
+        if ($ticket->status !== 'inbox') {
+            return response()->json([
+                'message' => 'Tiket sudah diproses dan tidak bisa ditolak.'
+            ], 400);
+        }
+
+        $ticket->status = 'rejected';
+        $ticket->reject_reason = $request->reject_reason;
+        $ticket->save();
+        $ticket->delete();
+
+        $this->storeNotificationLogs($ticket, 'rejected');
+
+        $this->broadcastTicketUpdate($ticket, 'rejected');
+
+        return response()->json([
+            'message' => 'Tiket berhasil ditolak.',
+            'ticket' => $ticket
+        ]);
+    }
+
     public function uatApprove(Request $request, $id): JsonResponse
     {
         $request->validate([
@@ -288,15 +317,8 @@ class TicketController extends Controller
     public function show(Request $request, $id): JsonResponse
     {
         $ticket = Ticket::with(['karyawan', 'adminIt', 'adminIt.user', 'checklists', 'systemPtsam'])
+            ->withTrashed()
             ->findOrFail($id);
-
-        $user = $request->user();
-        $karyawan = $user->karyawan;
-        $isOwner = $karyawan && $ticket->karyawan_id === $karyawan->id;
-
-        if (!$user->isAdmin() && !$isOwner) {
-            return response()->json(['message' => 'Anda tidak memiliki izin untuk melihat tiket ini.'], 403);
-        }
 
         if ($ticket->adminIt && $ticket->adminIt->user) {
             $ticket->adminIt->user->avatar_url = $ticket->adminIt->user->avatar_path
@@ -423,6 +445,27 @@ class TicketController extends Controller
                 $actor,
                 $actorName,
                 false
+            );
+
+            return;
+        }
+
+        if ($action === 'rejected') {
+            $message = 'Tiket "' . $ticket->judul_laporan . '" ditolak oleh ' . $actorName . '.';
+            if ($ticket->reject_reason) {
+                $message .= ' Alasan: ' . $ticket->reject_reason;
+            }
+
+            $this->createNotificationForUsers(
+                $reporterOnly,
+                $ticket,
+                'user',
+                'ticket_rejected',
+                'Tiket ditolak',
+                $message,
+                $actor,
+                $actorName,
+                true
             );
 
             return;

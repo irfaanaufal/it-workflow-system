@@ -162,8 +162,8 @@ function TicketCard({ ticket, onUat, onDetail, onEdit, onDelete }) {
     const isOwner = user?.karyawan?.id === ticket.karyawan_id;
     const role = user?.role_name;
     const isAdmin = role === 'superadmin' || role === 'admin';
-    const canEdit = isAdmin || (isOwner && ticket.status === 'inbox');
-    const canDelete = isAdmin || (isOwner && ticket.status === 'inbox');
+    const canEdit = ticket.status === 'inbox';
+    const canDelete = ticket.status === 'inbox';
 
     const handleTestingClick = () => {
         if (!readyToSubmit) {

@@ -17,6 +17,10 @@ const sortByUrgency = (tickets) => {
 export default function Inbox() {
     const [tickets, setTickets] = useState([]);
     const [searchQuery, setSearchQuery] = useState('');
+    const [isRejectOpen, setIsRejectOpen] = useState(false);
+    const [selectedTicket, setSelectedTicket] = useState(null);
+    const [rejectReason, setRejectReason] = useState('');
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const fetchTickets = () => {
         axios.get('/api/tickets/inbox')
@@ -56,6 +60,26 @@ export default function Inbox() {
             .catch(err => alert(err.response?.data?.message || 'Gagal mengambil tiket.'));
     };
 
+    const handleRejectClick = (ticket) => {
+        setSelectedTicket(ticket);
+        setRejectReason('');
+        setIsRejectOpen(true);
+    };
+
+    const handleRejectSubmit = () => {
+        if (!rejectReason.trim()) return;
+        setIsSubmitting(true);
+        axios.post(`/api/tickets/${selectedTicket.id}/reject`, { reject_reason: rejectReason })
+            .then(() => {
+                setTickets(prev => prev.filter(t => t.id !== selectedTicket.id));
+                setIsRejectOpen(false);
+                setSelectedTicket(null);
+                setRejectReason('');
+            })
+            .catch(err => alert(err.response?.data?.message || 'Gagal menolak tiket.'))
+            .finally(() => setIsSubmitting(false));
+    };
+
     const filteredTickets = React.useMemo(() => {
         if (!searchQuery) return tickets;
         const q = searchQuery.toLowerCase();
@@ -90,16 +114,77 @@ export default function Inbox() {
                 ) : (
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 pt-2">
                         {filteredTickets.map(ticket => (
-                            <InboxCard key={ticket.id} ticket={ticket} onTake={handleTake} onDetail={() => router.visit(route('admin.ticket-detail', ticket.id))} />
+                            <InboxCard key={ticket.id} ticket={ticket} onTake={handleTake} onReject={handleRejectClick} onDetail={() => router.visit(route('admin.ticket-detail', ticket.id))} />
                         ))}
                     </div>
                 )}
             </div>
+
+            {/* Reject Modal */}
+            {isRejectOpen && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+                    <div className="fixed inset-0 bg-black/50 dark:bg-black/70" onClick={() => !isSubmitting && setIsRejectOpen(false)} />
+                    <div className="relative bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-md border border-gray-200 dark:border-zinc-800">
+                        <div className="p-6">
+                            <div className="flex items-center gap-3 mb-4">
+                                <div className="flex items-center justify-center w-10 h-10 rounded-full bg-rose-100 dark:bg-rose-950/30">
+                                    <svg className="w-5 h-5 text-rose-600 dark:text-rose-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                </div>
+                                <div>
+                                    <h3 className="text-lg font-bold text-gray-900 dark:text-zinc-100">Tolak Tiket</h3>
+                                    <p className="text-sm text-gray-500 dark:text-zinc-400 line-clamp-1">{selectedTicket?.judul_laporan}</p>
+                                </div>
+                            </div>
+                            <div className="mb-4">
+                                <label className="block text-sm font-semibold text-gray-700 dark:text-zinc-300 mb-2">
+                                    Alasan Penolakan <span className="text-rose-500">*</span>
+                                </label>
+                                <textarea
+                                    value={rejectReason}
+                                    onChange={(e) => setRejectReason(e.target.value)}
+                                    className="w-full px-4 py-3 text-sm border border-gray-300 dark:border-zinc-700 rounded-xl bg-white dark:bg-zinc-800 text-gray-900 dark:text-zinc-100 placeholder-gray-400 dark:placeholder-zinc-500 focus:ring-2 focus:ring-rose-500 focus:border-rose-500 resize-none"
+                                    rows={3}
+                                    placeholder="Masukkan alasan penolakan..."
+                                    autoFocus
+                                />
+                            </div>
+                            <div className="flex justify-end gap-3">
+                                <button
+                                    onClick={() => setIsRejectOpen(false)}
+                                    disabled={isSubmitting}
+                                    className="px-4 py-2 text-sm font-semibold text-gray-700 dark:text-zinc-300 bg-gray-100 dark:bg-zinc-800 hover:bg-gray-200 dark:hover:bg-zinc-700 rounded-xl transition disabled:opacity-50"
+                                >
+                                    Batal
+                                </button>
+                                <button
+                                    onClick={handleRejectSubmit}
+                                    disabled={!rejectReason.trim() || isSubmitting}
+                                    className="px-4 py-2 text-sm font-semibold text-white bg-rose-600 hover:bg-rose-700 rounded-xl transition disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+                                >
+                                    {isSubmitting ? (
+                                        <>
+                                            <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+                                                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+                                            </svg>
+                                            Memproses...
+                                        </>
+                                    ) : (
+                                        'Tolak Tiket'
+                                    )}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </AuthenticatedLayout>
     );
 }
 
-function InboxCard({ ticket, onTake, onDetail }) {
+function InboxCard({ ticket, onTake, onReject, onDetail }) {
     return (
         <div className="flex flex-col rounded-2xl overflow-hidden border border-gray-200/70 dark:border-zinc-800 shadow-sm hover:shadow-md transition duration-200 bg-white dark:bg-zinc-900">
 
@@ -159,12 +244,20 @@ function InboxCard({ ticket, onTake, onDetail }) {
                         const canTake = user.role_name === 'superadmin' || user.role_name === 'admin';
                         if (!canTake) return null;
                         return (
-                            <button
-                                onClick={() => onTake(ticket.id)}
-                                className="bg-gray-100 hover:bg-gray-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-[10px] font-bold text-gray-700 dark:text-zinc-300 py-1.5 px-3.5 rounded-lg flex items-center gap-1 transition border border-gray-200/60 dark:border-zinc-700 cursor-pointer"
-                            >
-                                Take <span className="text-gray-400 dark:text-zinc-500 font-normal">→</span>
-                            </button>
+                            <div className="flex items-center gap-2">
+                                <button
+                                    onClick={() => onReject(ticket)}
+                                    className="bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/30 dark:hover:bg-rose-950/50 text-[10px] font-bold text-rose-600 dark:text-rose-400 py-1.5 px-3 rounded-lg flex items-center gap-1 transition border border-rose-200/60 dark:border-rose-900/50 cursor-pointer"
+                                >
+                                    Reject
+                                </button>
+                                <button
+                                    onClick={() => onTake(ticket.id)}
+                                    className="bg-gray-100 hover:bg-gray-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-[10px] font-bold text-gray-700 dark:text-zinc-300 py-1.5 px-3.5 rounded-lg flex items-center gap-1 transition border border-gray-200/60 dark:border-zinc-700 cursor-pointer"
+                                >
+                                    Take <span className="text-gray-400 dark:text-zinc-500 font-normal">→</span>
+                                </button>
+                            </div>
                         );
                     })()}
                 </div>

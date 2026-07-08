@@ -10,6 +10,7 @@ const STATUS_MAP = {
     in_progress: { label: 'In Progress', cls: 'bg-indigo-50 text-indigo-700 dark:bg-indigo-950/30 dark:text-indigo-400 border-indigo-200 dark:border-indigo-900' },
     testing: { label: 'Testing', cls: 'bg-violet-50 text-violet-700 dark:bg-violet-950/30 dark:text-violet-400 border-violet-200 dark:border-violet-900' },
     approved: { label: 'Selesai ✔', cls: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400 border-emerald-200 dark:border-emerald-900' },
+    rejected: { label: 'Ditolak ✘', cls: 'bg-rose-50 text-rose-700 dark:bg-rose-950/30 dark:text-rose-400 border-rose-200 dark:border-rose-900' },
 };
 
 export default function History({ tickets }) {
@@ -103,7 +104,7 @@ export default function History({ tickets }) {
                     {/* Mobile: card list */}
                     <div className="md:hidden divide-y divide-gray-100 dark:divide-zinc-800">
                         {filteredTickets.length === 0 ? (
-                            <p className="px-5 py-10 text-center text-sm text-gray-400 dark:text-zinc-600">Belum ada tiket approved.</p>
+                            <p className="px-5 py-10 text-center text-sm text-gray-400 dark:text-zinc-600">Belum ada tiket di history.</p>
                         ) : filteredTickets.map((ticket, i) => {
                             const s = STATUS_MAP[ticket.status] || { label: ticket.status, cls: 'bg-gray-100 text-gray-600 border-gray-200' };
                             return (
@@ -119,6 +120,12 @@ export default function History({ tickets }) {
                                             {s.label}
                                         </span>
                                     </div>
+                                    {ticket.status === 'rejected' && ticket.reject_reason && (
+                                        <div className="mb-2 p-2 rounded-lg bg-rose-50 dark:bg-rose-950/20 border border-rose-100 dark:border-rose-900/30">
+                                            <p className="text-[9px] font-bold text-rose-500 uppercase mb-0.5">Alasan Penolakan</p>
+                                            <p className="text-[10px] text-rose-700 dark:text-rose-400">{ticket.reject_reason}</p>
+                                        </div>
+                                    )}
                                     <div className="flex items-center justify-between gap-2">
                                         <div className="flex items-center gap-2 min-w-0">
                                             <span className={`text-[9px] font-bold px-2 py-0.5 rounded border ${getCategoryStyles(ticket.kategori_laporan)}`}>
@@ -149,7 +156,7 @@ export default function History({ tickets }) {
                             </thead>
                             <tbody className="bg-white dark:bg-zinc-900 divide-y divide-gray-100 dark:divide-zinc-800">
                                 {filteredTickets.length === 0 ? (
-                                    <tr><td colSpan={8} className="px-5 py-10 text-center text-sm text-gray-400 dark:text-zinc-600">Belum ada tiket approved.</td></tr>
+                                    <tr><td colSpan={8} className="px-5 py-10 text-center text-sm text-gray-400 dark:text-zinc-600">Belum ada tiket di history.</td></tr>
                                 ) : filteredTickets.map((ticket, i) => {
                                     const s = STATUS_MAP[ticket.status] || { label: ticket.status, cls: 'bg-gray-100 text-gray-600 border-gray-200' };
                                     return (
@@ -167,6 +174,11 @@ export default function History({ tickets }) {
                                                 <span className={`text-[9px] font-bold px-2 py-1 rounded-lg border uppercase tracking-wide ${s.cls}`}>
                                                     {s.label}
                                                 </span>
+                                                {ticket.status === 'rejected' && ticket.reject_reason && (
+                                                    <p className="text-[9px] text-rose-600 dark:text-rose-400 mt-1 max-w-[150px] truncate" title={ticket.reject_reason}>
+                                                        {ticket.reject_reason}
+                                                    </p>
+                                                )}
                                             </td>
                                             <td className="px-5 py-3.5 text-[10px] text-gray-400 dark:text-zinc-600 whitespace-nowrap">
                                                 {new Date(ticket.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}

@@ -171,13 +171,13 @@ Route::middleware(['auth', 'applications.access'])->group(function () {
         $isAdmin = $user->isAdmin();
 
         if ($isAdmin) {
-            $tickets = Ticket::with('karyawan')->where('status', 'approved')->orderBy('updated_at', 'desc')->get();
+            $tickets = Ticket::with('karyawan')->withTrashed()->whereIn('status', ['approved', 'rejected'])->orderBy('updated_at', 'desc')->get();
         } else {
             $divisi = $user->karyawan?->divisi;
             $tickets = $divisi
                 ? Ticket::whereHas('karyawan', function ($q) use ($divisi) {
                     $q->where('divisi', $divisi);
-                })->where('status', 'approved')->with('karyawan')->orderBy('updated_at', 'desc')->get()
+                })->withTrashed()->whereIn('status', ['approved', 'rejected'])->with('karyawan')->orderBy('updated_at', 'desc')->get()
                 : collect();
         }
 
@@ -186,7 +186,7 @@ Route::middleware(['auth', 'applications.access'])->group(function () {
         ]);
     })->name('history');
 
-    Route::middleware('admin.it')->group(function () {
+    Route::middleware('admin.it.ticket')->group(function () {
         Route::get('/admin/inbox', function () {
             return Inertia::render('Admin/Inbox');
         })->name('admin.inbox');
@@ -208,9 +208,10 @@ Route::middleware(['auth', 'applications.access'])->group(function () {
         Route::patch('/notifications/read-all', [LogNotifikasiController::class, 'markAllRead']);
         Route::get('/systems', [\App\Http\Controllers\SystemPtsamController::class, 'apiIndex']);
 
-        Route::middleware('admin.it')->group(function () {
+        Route::middleware('admin.it.ticket')->group(function () {
             Route::get('/tickets/inbox', [TicketController::class, 'getInbox']);
             Route::post('/tickets/{id}/take', [TicketController::class, 'takeTicket']);
+            Route::post('/tickets/{id}/reject', [TicketController::class, 'rejectTicket']);
             Route::patch('/tickets/{id}/status', [TicketController::class, 'updateStatus']);
 
             Route::post('/checklists', [ChecklistController::class, 'store']);
