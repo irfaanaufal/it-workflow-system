@@ -24,7 +24,7 @@ class LogNotifikasiController extends Controller
 
     public function ticketTimeline(Request $request, int $ticketId): JsonResponse
     {
-        $ticket = Ticket::with('karyawan')->findOrFail($ticketId);
+        $ticket = Ticket::with('karyawan')->withTrashed()->findOrFail($ticketId);
         $user = $request->user();
         $user->load('karyawan');
 
@@ -47,6 +47,7 @@ class LogNotifikasiController extends Controller
                 'revision_requested',
                 'approved',
                 'uat_approved',
+                'ticket_rejected',
             ])
             ->orderBy('created_at')
             ->orderBy('id')

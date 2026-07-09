@@ -492,9 +492,9 @@ export default function TicketDetail({ ticketId }) {
                         {/* Lampiran Row Card */}
                         <div className="bg-white dark:bg-zinc-900 rounded-[20px] border border-gray-200 dark:border-zinc-800 p-4 shadow-sm flex items-center justify-between gap-4">
                             <span className="text-sm font-extrabold text-gray-850 dark:text-zinc-200">Lampiran</span>
-                            {ticket.attachment_path ? (
+                            {ticket.attachment_url ? (
                                 <a
-                                    href={`/storage/${ticket.attachment_path}`}
+                                    href={ticket.attachment_url}
                                     target="_blank"
                                     rel="noopener noreferrer"
                                     className="bg-[#0070f3] hover:bg-blue-600 text-white text-xs font-bold py-2.5 px-4 rounded-xl shadow-xs transition inline-flex items-center gap-1.5 cursor-pointer"

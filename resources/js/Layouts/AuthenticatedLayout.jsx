@@ -1,6 +1,7 @@
 import { Link, router, usePage } from '@inertiajs/react';
 import React, { useState, useEffect, useRef } from 'react';
 import axios from 'axios';
+import Select from 'react-select';
 import Sidebar from '@/Components/Sidebar';
 import Modal from '@/Components/Modal';
 
@@ -130,7 +131,7 @@ export default function AuthenticatedLayout({
     const [attachment, setAttachment] = useState(null);
     const [attachmentName, setAttachmentName] = useState('');
     const [loading, setLoading] = useState(false);
-    const [systemId, setSystemId] = useState('');
+    const [systemId, setSystemId] = useState(null);
     const [systems, setSystems] = useState([]);
 
     const [fidInput, setFidInput] = useState('');
@@ -176,7 +177,7 @@ export default function AuthenticatedLayout({
                 .then(res => setSystems(res.data))
                 .catch(console.error);
         } else {
-            setSystemId('');
+            setSystemId(null);
         }
     }, [isCreateModalOpen]);
 
@@ -263,7 +264,7 @@ export default function AuthenticatedLayout({
     };
 
     /*Logout*/
-    const handleLogout = () => axios.post(route('logout')).then(() => { window.location.href = '/'; });
+    const handleLogout = () => axios.post(route('logout')).then(() => { window.location.href = route('login'); });
 
     /*File change*/
     const handleFileChange = (e) => {
@@ -280,7 +281,7 @@ export default function AuthenticatedLayout({
         fd.append('urgensi_laporan', urgensi); fd.append('kondisi_lapangan', kondisi);
         fd.append('keinginan_sistem', keinginan); fd.append('dampak_positif', dampak);
         if (['add feature', 'maintenance', 'fix bug'].includes(kategori) && systemId) {
-            fd.append('system_ptsam_id', systemId);
+            fd.append('system_ptsam_id', systemId.value);
         }
         if (attachment) fd.append('attachment', attachment);
 
@@ -290,7 +291,7 @@ export default function AuthenticatedLayout({
                 setJudul(''); setKategori('new system'); setUrgensi('medium');
                 setKondisi(''); setKeinginan(''); setDampak('');
                 setAttachment(null); setAttachmentName('');
-                setSystemId('');
+                setSystemId(null);
                 window.location.reload();
             })
             .catch(err => {
@@ -815,13 +816,69 @@ export default function AuthenticatedLayout({
                         {['add feature', 'maintenance', 'fix bug'].includes(kategori) && (
                             <div className="animate-fadeIn">
                                 <label className="block text-[10px] font-bold text-gray-600 dark:text-zinc-300 uppercase tracking-wider mb-1.5">Sistem yang Dilaporkan</label>
-                                <select value={systemId} onChange={e => setSystemId(e.target.value)} required
-                                    className="w-full text-sm border border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-900 text-gray-900 dark:text-white rounded-xl py-2.5 px-4 focus:ring-2 focus:ring-indigo-500/40 outline-none transition cursor-pointer">
-                                    <option value="">-- Pilih Sistem --</option>
-                                    {systems.map(sys => (
-                                        <option key={sys.id} value={sys.id}>{sys.nama_sistem}</option>
-                                    ))}
-                                </select>
+                                <Select
+                                    value={systemId}
+                                    onChange={(option) => setSystemId(option)}
+                                    options={systems.map(sys => ({ value: sys.id, label: sys.nama_sistem }))}
+                                    placeholder="-- Pilih Sistem --"
+                                    isClearable
+                                    isSearchable
+                                    className="text-sm"
+                                    classNamePrefix="react-select"
+                                    styles={{
+                                        control: (base, state) => ({
+                                            ...base,
+                                            borderColor: state.isFocused ? '#6366f1' : '#d1d5db',
+                                            backgroundColor: document.documentElement.classList.contains('dark') ? '#18181b' : '#fff',
+                                            color: document.documentElement.classList.contains('dark') ? '#fff' : '#111827',
+                                            borderRadius: '0.75rem',
+                                            padding: '0.25rem 0.5rem',
+                                            minHeight: '2.625rem',
+                                            boxShadow: state.isFocused ? '0 0 0 2px rgba(99,102,241,0.2)' : 'none',
+                                            '&:hover': { borderColor: '#6366f1' }
+                                        }),
+                                        menu: (base) => ({
+                                            ...base,
+                                            backgroundColor: document.documentElement.classList.contains('dark') ? '#18181b' : '#fff',
+                                            border: '1px solid ' + (document.documentElement.classList.contains('dark') ? '#27272a' : '#e5e7eb'),
+                                            borderRadius: '0.75rem',
+                                            overflow: 'hidden'
+                                        }),
+                                        option: (base, { isFocused, isSelected }) => ({
+                                            ...base,
+                                            backgroundColor: isSelected ? '#6366f1' : isFocused ? (document.documentElement.classList.contains('dark') ? '#27272a' : '#f3f4f6') : 'transparent',
+                                            color: isSelected ? '#fff' : (document.documentElement.classList.contains('dark') ? '#e4e4e7' : '#374151'),
+                                            padding: '0.5rem 1rem',
+                                            fontSize: '0.875rem',
+                                            cursor: 'pointer'
+                                        }),
+                                        singleValue: (base) => ({
+                                            ...base,
+                                            color: document.documentElement.classList.contains('dark') ? '#fff' : '#111827'
+                                        }),
+                                        placeholder: (base) => ({
+                                            ...base,
+                                            color: document.documentElement.classList.contains('dark') ? '#71717a' : '#9ca3af'
+                                        }),
+                                        input: (base) => ({
+                                            ...base,
+                                            color: document.documentElement.classList.contains('dark') ? '#fff' : '#111827'
+                                        }),
+                                        indicatorSeparator: () => ({ display: 'none' }),
+                                        dropdownIndicator: (base) => ({
+                                            ...base,
+                                            color: document.documentElement.classList.contains('dark') ? '#71717a' : '#9ca3af'
+                                        }),
+                                        clearIndicator: (base) => ({
+                                            ...base,
+                                            color: document.documentElement.classList.contains('dark') ? '#71717a' : '#9ca3af'
+                                        }),
+                                        noOptionsMessage: (base) => ({
+                                            ...base,
+                                            color: document.documentElement.classList.contains('dark') ? '#71717a' : '#9ca3af'
+                                        })
+                                    }}
+                                />
                             </div>
                         )}
                         {[

@@ -61,4 +61,28 @@ class Ticket extends Model
     {
         return $this->belongsTo(SystemPtsam::class, 'system_ptsam_id', 'id');
     }
+
+    /**
+     * Get the full URL for the attachment.
+     */
+    public function getAttachmentUrlAttribute(): ?string
+    {
+        if (!$this->attachment_path) {
+            return null;
+        }
+
+        $url = asset('storage/app/public/' . $this->attachment_path);
+
+        return str_replace('/public/storage', '/storage', $url);
+    }
+
+    /**
+     * Get the filename of the attachment.
+     */
+    public function getAttachmentNameAttribute(): ?string
+    {
+        return $this->attachment_path
+            ? basename($this->attachment_path)
+            : null;
+    }
 }

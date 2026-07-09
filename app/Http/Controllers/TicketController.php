@@ -19,7 +19,10 @@ class TicketController extends Controller
     {
         $tickets = Ticket::with(['karyawan', 'adminIt', 'adminIt.user', 'systemPtsam'])
             ->orderBy('updated_at', 'desc')
-            ->get();
+            ->get()
+            ->each(function ($ticket) {
+                $ticket->append(['attachment_url', 'attachment_name']);
+            });
 
         return response()->json($tickets);
     }
@@ -62,6 +65,8 @@ class TicketController extends Controller
 
         $this->broadcastTicketUpdate($ticket, 'created');
 
+        $ticket->append(['attachment_url', 'attachment_name']);
+
         return response()->json([
             'message' => 'Ticket created successfully.',
             'ticket' => $ticket
@@ -90,10 +95,21 @@ class TicketController extends Controller
             $validated['system_ptsam_id'] = null;
         }
 
+        if ($request->hasFile('attachment')) {
+            if ($ticket->attachment_path && \Storage::disk('public')->exists($ticket->attachment_path)) {
+                \Storage::disk('public')->delete($ticket->attachment_path);
+            }
+            $validated['attachment_path'] = $request->file('attachment')->store('attachments', 'public');
+        }
+
+        unset($validated['attachment']);
         $ticket->fill($validated);
         $ticket->save();
 
-        return response()->json(['message' => 'Tiket berhasil diperbarui.', 'ticket' => $ticket->load(['karyawan', 'systemPtsam'])]);
+        $ticket->load(['karyawan', 'systemPtsam']);
+        $ticket->append(['attachment_url', 'attachment_name']);
+
+        return response()->json(['message' => 'Tiket berhasil diperbarui.', 'ticket' => $ticket]);
     }
 
     public function getInbox(): JsonResponse
@@ -101,7 +117,10 @@ class TicketController extends Controller
         $tickets = Ticket::with(['karyawan', 'systemPtsam'])
             ->where('status', 'inbox')
             ->orderBy('created_at', 'desc')
-            ->get();
+            ->get()
+            ->each(function ($ticket) {
+                $ticket->append(['attachment_url', 'attachment_name']);
+            });
 
         return response()->json($tickets);
     }
@@ -286,6 +305,7 @@ class TicketController extends Controller
                         ? asset($ticket->adminIt->user->avatar_path)
                         : null;
                 }
+                $ticket->append(['attachment_url', 'attachment_name']);
                 return $ticket;
             });
 
@@ -325,6 +345,8 @@ class TicketController extends Controller
                 ? asset($ticket->adminIt->user->avatar_path)
                 : null;
         }
+
+        $ticket->append(['attachment_url', 'attachment_name']);
 
         return response()->json($ticket);
     }

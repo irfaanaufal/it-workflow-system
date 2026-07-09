@@ -21,6 +21,7 @@ class UpdateTicketRequest extends FormRequest
             'keinginan_sistem' => ['required', 'string'],
             'dampak_positif'   => ['required', 'string'],
             'system_ptsam_id'  => ['nullable', 'integer', 'exists:system_ptsam,id'],
+            'attachment'       => ['nullable', 'file', 'max:10240', 'mimes:jpg,jpeg,png,gif,pdf,doc,docx,xls,xlsx'],
         ];
     }
 

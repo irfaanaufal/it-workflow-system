@@ -11,12 +11,7 @@ use Inertia\Inertia;
 use App\Http\Controllers\ApplicationController;
 
 Route::get('/', function () {
-    return Inertia::render('Welcome', [
-        'canLogin' => Route::has('login'),
-        'canRegister' => Route::has('register'),
-        'laravelVersion' => Application::VERSION,
-        'phpVersion' => PHP_VERSION,
-    ]);
+    return redirect()->route('login');
 });
 
 use App\Models\LogNotifikasi;

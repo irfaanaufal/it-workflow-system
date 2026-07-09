@@ -331,6 +331,8 @@ function EditTicketModal({ ticket, onClose, onSaved }) {
     const [systems, setSystems] = useState([]);
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
+    const [attachment, setAttachment] = useState(null);
+    const [attachmentName, setAttachmentName] = useState('');
 
     const canBlocker = BLOCKER_CATEGORIES.includes(kategori);
 
@@ -355,15 +357,32 @@ function EditTicketModal({ ticket, onClose, onSaved }) {
         setError('');
         setLoading(true);
         try {
-            const res = await axios.patch(`/api/tickets/${ticket.id}`, {
-                judul_laporan: judul,
-                kategori_laporan: kategori,
-                urgensi_laporan: urgensi,
-                kondisi_lapangan: kondisi,
-                keinginan_sistem: keinginan,
-                dampak_positif: dampak,
-                system_ptsam_id: ['add feature', 'maintenance', 'fix bug'].includes(kategori) ? (systemId || null) : null,
-            });
+            let res;
+            if (attachment) {
+                const fd = new FormData();
+                fd.append('judul_laporan', judul);
+                fd.append('kategori_laporan', kategori);
+                fd.append('urgensi_laporan', urgensi);
+                fd.append('kondisi_lapangan', kondisi);
+                fd.append('keinginan_sistem', keinginan);
+                fd.append('dampak_positif', dampak);
+                fd.append('system_ptsam_id', ['add feature', 'maintenance', 'fix bug'].includes(kategori) ? (systemId || '') : '');
+                fd.append('attachment', attachment);
+                fd.append('_method', 'PATCH');
+                res = await axios.post(`/api/tickets/${ticket.id}`, fd, {
+                    headers: { 'Content-Type': 'multipart/form-data' }
+                });
+            } else {
+                res = await axios.patch(`/api/tickets/${ticket.id}`, {
+                    judul_laporan: judul,
+                    kategori_laporan: kategori,
+                    urgensi_laporan: urgensi,
+                    kondisi_lapangan: kondisi,
+                    keinginan_sistem: keinginan,
+                    dampak_positif: dampak,
+                    system_ptsam_id: ['add feature', 'maintenance', 'fix bug'].includes(kategori) ? (systemId || null) : null,
+                });
+            }
             onSaved(res.data.ticket);
             onClose();
         } catch (err) {
@@ -480,6 +499,23 @@ function EditTicketModal({ ticket, onClose, onSaved }) {
                         <label className="block text-xs font-bold text-gray-600 dark:text-zinc-300 uppercase tracking-wider mb-1.5">Dampak Positif</label>
                         <textarea value={dampak} onChange={e => setDampak(e.target.value)} rows={3}
                             className="w-full text-sm border border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-gray-900 dark:text-white rounded-xl py-2.5 px-4 focus:ring-2 focus:ring-amber-400/40 outline-none resize-none transition" required />
+                    </div>
+
+                    {/* Attachment */}
+                    <div>
+                        <label className="block text-xs font-bold text-gray-600 dark:text-zinc-300 uppercase tracking-wider mb-1.5">Lampiran (Opsional)</label>
+                        <div className="flex items-center gap-3">
+                            <label className="bg-gray-100 hover:bg-gray-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-gray-700 dark:text-zinc-300 text-xs font-bold py-2 px-4 rounded-xl cursor-pointer transition">
+                                Pilih File
+                                <input type="file" onChange={(e) => {
+                                    const f = e.target.files[0];
+                                    if (f) { setAttachment(f); setAttachmentName(f.name); }
+                                }} accept="image/*,.pdf,.doc,.docx,.xls,.xlsx" className="hidden" />
+                            </label>
+                            <span className="text-xs text-gray-400 dark:text-zinc-600 truncate max-w-[160px]">
+                                {attachmentName || ticket.attachment_name || 'Tidak ada file'}
+                            </span>
+                        </div>
                     </div>
 
                     {error && (

@@ -23,7 +23,7 @@ export default function Sidebar({ mobileOpen = false, onMobileClose, unreadCount
 
     const handleLogout = (e) => {
         e.preventDefault();
-        axios.post(route('logout')).then(() => { window.location.href = '/'; });
+        axios.post(route('logout')).then(() => { window.location.href = route('login'); });
     };
 
     const isDashboardActive = route().current('dashboard');
