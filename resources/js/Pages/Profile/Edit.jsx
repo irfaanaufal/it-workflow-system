@@ -51,7 +51,11 @@ export default function Edit({ mustVerifyEmail, status }) {
         <AuthenticatedLayout title="Profil Saya">
             <Head title="Profile" />
 
-            <div className="py-4 md:py-6 space-y-4 max-w-5xl mx-auto w-full">
+            <div className="py-4 md:py-6 space-y-4 w-full max-w-full">
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+
+                    {/* Left Column */}
+                    <div className="space-y-4">
 
                 {/* â”€â”€ Avatar Card â”€â”€ */}
                 <div className="bg-white dark:bg-zinc-950 rounded-lg border border-gray-200/80 dark:border-zinc-800 shadow-sm overflow-hidden">
@@ -148,15 +152,18 @@ export default function Edit({ mustVerifyEmail, status }) {
 
                 {/* â”€â”€ Profile Info Card â”€â”€ */}
                 <ProfileInfoForm user={user} />
+                    </div>
 
-                {/* â”€â”€ Password Card â”€â”€ */}
-                <PasswordForm />
+                    {/* Right Column */}
+                    <div className="space-y-4">
+                        <PasswordForm />
 
-                {/* â”€â”€ Employee Data (Read-only) â”€â”€ */}
-                <EmployeeDataCard user={user} />
+                        <EmployeeDataCard user={user} />
 
-                {/* â”€â”€ Delete Account â”€â”€ */}
-                <DeleteCard />
+                        <DeleteCard />
+                    </div>
+
+                </div>
             </div>
         </AuthenticatedLayout>
     );
@@ -242,7 +249,7 @@ function PasswordForm() {
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <Field label="Password Sekarang" error={errors.current_password}>
                         <input type="password" value={data.current_password} onChange={e => setData('current_password', e.target.value)} autoComplete="current-password"
                             className="w-full text-sm border border-gray-300 dark:border-zinc-700 bg-white dark:bg-zinc-950 text-gray-900 dark:text-white rounded-lg py-2.5 px-4 focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 outline-none transition" />
@@ -277,7 +284,7 @@ function PasswordForm() {
 /*Employee Data (Read-only)*/
 function EmployeeDataCard({ user }) {
     const fields = [
-        { label: 'FID / ID Karyawan', value: user.username || '-' },
+        { label: 'FID / ID Karyawan', value: user.fid || '-' },
         { label: 'Role Akses', value: user.role_name || '-' },
         { label: 'Divisi', value: user.divisi || '-' },
         { label: 'Jabatan', value: user.karyawan?.jabatan || '-' },
@@ -291,7 +298,7 @@ function EmployeeDataCard({ user }) {
                 <p className="text-xs text-gray-500 dark:text-zinc-400 mt-1">Dikelola oleh HR / IT Admin. Tidak dapat diubah sendiri.</p>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {fields.map(f => (
                     <div key={f.label}>
                         <p className="text-[10px] font-bold text-gray-400 dark:text-zinc-500 uppercase tracking-widest mb-1">{f.label}</p>

@@ -36,7 +36,7 @@ export function OrbitCluster({ isDark = true }) {
                 }
             `}</style>
             <img
-                src="/it-system/public/images/login.png"
+                src="/it-system/public/images/login.gif"
                 alt=""
                 className="oc-anim max-w-full max-h-full object-contain"
                 style={{

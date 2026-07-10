@@ -131,13 +131,10 @@ export default function Register() {
 
                 <OrbitCluster isDark={isDark} />
 
-                <div className="flex justify-center gap-6 text-[11px] text-gray-400 dark:text-white/30">
-                    <Link href="/terms-of-service" className="transition hover:text-gray-600 dark:hover:text-white/60">
-                        Terms of Service
-                    </Link>
-                    <Link href="/privacy-policy" className="transition hover:text-gray-600 dark:hover:text-white/60">
-                        Privacy Policy
-                    </Link>
+                <div className="relative z-20 flex justify-center gap-6 text-[11px] text-gray-400 dark:text-white/30">
+                    <a href="https://heyzine.com/flip-book/a93274951b.html" target="_blank" rel="noopener noreferrer" className="transition hover:text-gray-600 dark:hover:text-white/60">
+                        Manual Book
+                    </a>
                 </div>
             </div>
 
@@ -367,9 +364,8 @@ export default function Register() {
                         </Link>
                     </div>
 
-                    <div className="mt-12 flex justify-center gap-6 text-[11px] text-gray-400 dark:text-white/25 lg:hidden">
-                        <Link href="/terms-of-service">Terms of Service</Link>
-                        <Link href="/privacy-policy">Privacy Policy</Link>
+                    <div className="relative z-20 mt-12 flex justify-center gap-6 text-[11px] text-gray-400 dark:text-white/25 lg:hidden">
+                        <a href="https://heyzine.com/flip-book/a93274951b.html" target="_blank" rel="noopener noreferrer">Manual Book</a>
                     </div>
                 </div>
             </div>
