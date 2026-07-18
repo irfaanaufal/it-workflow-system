@@ -71,9 +71,7 @@ class Ticket extends Model
             return null;
         }
 
-        $url = asset('storage/app/public/' . $this->attachment_path);
-
-        return str_replace('/public/storage', '/storage', $url);
+        return asset('storage/' . $this->attachment_path);
     }
 
     /**
