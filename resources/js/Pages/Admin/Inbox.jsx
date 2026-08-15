@@ -32,7 +32,7 @@ export default function Inbox() {
         fetchTickets();
     }, []);
 
-    /* ── Real-time updates via window event (dispatched by AuthenticatedLayout) ── */
+    /* -- Real-time updates via window event (dispatched by AuthenticatedLayout) -- */
     useEffect(() => {
         const handler = (e) => {
             const ticket = e.detail.ticket;

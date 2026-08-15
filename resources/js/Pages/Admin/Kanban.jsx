@@ -22,7 +22,7 @@ export default function KanbanBoard() {
     const [board, setBoard] = useState(initBoard);
     const [searchQuery, setSearchQuery] = useState('');
 
-    /* ── Fetch tickets on mount ── */
+    /* -- Fetch tickets on mount -- */
     useEffect(() => {
         axios.get('/api/tickets')
             .then(res => {
@@ -33,7 +33,7 @@ export default function KanbanBoard() {
             .catch(console.error);
     }, []);
 
-    /* ── Real-time updates via window event (dispatched by AuthenticatedLayout) ── */
+    /* -- Real-time updates via window event (dispatched by AuthenticatedLayout) -- */
     useEffect(() => {
         const handler = (e) => {
             const u = e.detail.ticket;
@@ -160,7 +160,7 @@ export default function KanbanBoard() {
                                                                     </div>
                                                                     {item.revision_reason && (
                                                                         <div className="mt-1.5 p-1.5 rounded-lg bg-rose-50 dark:bg-rose-950/20 border border-rose-100 dark:border-rose-900/30">
-                                                                            <p className="text-[8px] font-bold text-rose-500 dark:text-rose-400 uppercase mb-0.5">⚠ Alasan Revisi</p>
+                                                                            <p className="text-[8px] font-bold text-rose-500 dark:text-rose-400 uppercase mb-0.5">? Alasan Revisi</p>
                                                                             <p className="text-[10px] text-rose-700 dark:text-rose-300 line-clamp-2">{item.revision_reason}</p>
                                                                         </div>
                                                                     )}

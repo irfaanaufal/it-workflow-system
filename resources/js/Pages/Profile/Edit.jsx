@@ -53,11 +53,10 @@ export default function Edit({ mustVerifyEmail, status }) {
 
             <div className="py-4 md:py-6 space-y-4 w-full max-w-full">
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-
                     {/* Left Column */}
                     <div className="space-y-4">
 
-                {/* â”€â”€ Avatar Card â”€â”€ */}
+                {/* ── Avatar Card ── */}
                 <div className="bg-white dark:bg-zinc-950 rounded-lg border border-gray-200/80 dark:border-zinc-800 shadow-sm overflow-hidden">
                     {/* Profile header */}
                     <div className="h-20 bg-white dark:bg-zinc-950 border-b border-gray-200 dark:border-zinc-800 relative" />
@@ -150,7 +149,7 @@ export default function Edit({ mustVerifyEmail, status }) {
                     </div>
                 </div>
 
-                {/* â”€â”€ Profile Info Card â”€â”€ */}
+                {/* ── Profile Info Card ── */}
                 <ProfileInfoForm user={user} />
                     </div>
 
@@ -334,7 +333,7 @@ function DeleteCard() {
     };
 }
 
-/* â”€â”€â”€ Reusable Field wrapper â”€â”€â”€ */
+/* ─── Reusable Field wrapper ─── */
 function Field({ label, error, children }) {
     return (
         <div>

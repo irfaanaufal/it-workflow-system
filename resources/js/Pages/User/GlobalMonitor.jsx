@@ -31,7 +31,7 @@ export default function GlobalMonitor() {
             .catch(console.error);
     }, []);
 
-    /* ── Real-time updates via window event (dispatched by AuthenticatedLayout) ── */
+    /* -- Real-time updates via window event (dispatched by AuthenticatedLayout) -- */
     useEffect(() => {
         const handler = (e) => {
             const u = e.detail.ticket;
