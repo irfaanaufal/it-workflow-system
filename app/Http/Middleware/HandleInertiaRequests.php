@@ -54,7 +54,7 @@ class HandleInertiaRequests extends Middleware
             'auth' => [
                 'user' => $userData,
             ],
-            'asset_url' => asset(''),
+            'asset_url' => rtrim(asset(''), '/'),
         ];
     }
 }
