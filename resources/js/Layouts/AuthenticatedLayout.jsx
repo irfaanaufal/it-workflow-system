@@ -229,7 +229,7 @@ export default function AuthenticatedLayout({
                     path = n.ticket_id ? `/tickets/${n.ticket_id}` : '/global-monitor';
             }
         }
-        router.visit(asset_url + '/index.php' + path);
+        router.visit(asset_url + path);
     };
     /* â”€â”€ Search â”€â”€ */
     useEffect(() => {

@@ -1,4 +1,6 @@
 // OrbitCluster - Video/GIF Background
+import { usePage } from '@inertiajs/react';
+
 export function DotRingMark({ isDark = true }) {
     const dots = [
         { cx: 14, cy: 4, o: 1 },
@@ -20,6 +22,8 @@ export function DotRingMark({ isDark = true }) {
 }
 
 export function OrbitCluster({ isDark = true }) {
+    const { asset_url } = usePage().props;
+
     return (
         <div className="absolute inset-0 z-10 flex items-center justify-center p-16">
             <style>{`
@@ -36,7 +40,7 @@ export function OrbitCluster({ isDark = true }) {
                 }
             `}</style>
             <img
-                src="/it-system/images/login.gif"
+                src={`${asset_url}/images/login.gif`}
                 alt=""
                 className="oc-anim max-w-full max-h-full object-contain"
                 style={{
