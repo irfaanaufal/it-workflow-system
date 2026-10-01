@@ -1,4 +1,4 @@
-import { Link, usePage } from '@inertiajs/react';
+import { Link, router, usePage } from '@inertiajs/react';
 import { useState } from 'react';
 import axios from 'axios';
 import AppLogo from '@/Components/AppLogo';
@@ -6,24 +6,21 @@ import AppLogo from '@/Components/AppLogo';
 export default function Sidebar({ mobileOpen = false, onMobileClose, unreadCount = 0, onOpenNotifications }) {
     const user = usePage().props.auth.user;
     const [hovered, setHovered] = useState(false);
-    const [appsMenuOpen, setAppsMenuOpen] = useState(
-        route().current('admin.applications.requests') ||
-        route().current('admin.applications.index')
-    );
-    const [rolesMenuOpen, setRolesMenuOpen] = useState(
-        route().current('admin.roles-permissions.index') ||
-        route().current('admin.roles-permissions.briefing') ||
-        route().current('admin.roles-permissions.reminder')
+    const [openDropdown, setOpenDropdown] = useState(
+        route().current('admin.applications.requests') || route().current('admin.applications.index')
+            ? 'apps'
+            : route().current('admin.roles-permissions.index') || route().current('admin.roles-permissions.briefing') || route().current('admin.roles-permissions.reminder')
+            ? 'roles'
+            : null
     );
     const expanded = hovered;
-    const role = user.role_name;
-    const isSuperAdmin = role === 'superadmin';
-    const isAdmin = role === 'superadmin' || role === 'admin';
-    const isItSuperAdmin = isSuperAdmin && user.divisi === 'IT';
+    const isIT = user.is_it === true;
+    const canManageMaster = user.can_manage_master === true;
+    const canSeeGlobalMonitor = user.can_see_global_monitor === true;
 
     const handleLogout = (e) => {
         e.preventDefault();
-        axios.post(route('logout')).then(() => { window.location.href = route('login'); });
+        axios.post(route('logout')).then(() => { router.visit(route('login')); }).catch(() => {});
     };
 
     const isDashboardActive = route().current('dashboard');
@@ -48,48 +45,48 @@ export default function Sidebar({ mobileOpen = false, onMobileClose, unreadCount
     const navItems = [];
 
     if (hasAccess) {
-        // Dashboard: admin view (superadmin & admin) | user view (user)
-        navItems.push({ href: route('dashboard'), active: isDashboardActive, label: 'Dashboard', icon: <IconHome /> });
+        // Dashboard: admin view (IT level 1) | user view (other levels)
+        navItems.push({ href: route('dashboard'), active: isDashboardActive, label: 'Dasbor', icon: <IconHome /> });
 
         // All roles: My Requests
-        navItems.push({ href: route('my-requests'), active: isMyReqActive, label: 'My Requests', icon: <IconClipboard /> });
+        navItems.push({ href: route('my-requests'), active: isMyReqActive, label: 'Laporan Saya', icon: <IconClipboard /> });
 
-        // Superadmin IT: Inbox
-        if (isItSuperAdmin) {
+        // IT (level 1): Inbox
+        if (isIT) {
             navItems.push({ href: route('admin.inbox'), active: isInboxActive, label: 'Inbox', icon: <IconMessage /> });
         }
 
-        // Superadmin IT: Kanban
-        if (isItSuperAdmin) {
+        // IT (level 1): Kanban
+        if (isIT) {
             navItems.push({ href: route('admin.kanban'), active: isKanbanActive, label: 'Kanban', icon: <IconKanban /> });
         }
 
-        // Non-IT Superadmin: Global Monitor
-        if (!isItSuperAdmin) {
-            navItems.push({ href: route('global-monitor'), active: isGlobalActive, label: 'Global Monitor', icon: <IconKanban /> });
+        // Direktur Utama & HRD: Global Monitor
+        if (canSeeGlobalMonitor) {
+            navItems.push({ href: route('global-monitor'), active: isGlobalActive, label: 'Monitor Global', icon: <IconKanban /> });
         }
 
-        // Superadmin only: Kelola Sistem
-        if (isSuperAdmin) {
-            navItems.push({ href: route('admin.systems.index'), active: isSystemsActive, label: 'System', icon: <IconSystem /> });
+        // Master data managers (IT, Direktur Utama, HRD, QA): Kelola Sistem
+        if (canManageMaster) {
+            navItems.push({ href: route('admin.systems.index'), active: isSystemsActive, label: 'Sistem', icon: <IconSystem /> });
         }
 
         // All roles: History
-        navItems.push({ href: route('history'), active: isHistoryActive, label: 'History', icon: <IconHistory /> });
+        navItems.push({ href: route('history'), active: isHistoryActive, label: 'Riwayat', icon: <IconHistory /> });
 
         if (navItems.length > 0) {
             navItems.push({ isDivider: true });
         }
 
-        // Superadmin only: Kelola Karyawan
-        if (isSuperAdmin) {
+        // Master data managers: Kelola Karyawan
+        if (canManageMaster) {
             navItems.push({ href: route('admin.karyawan.index'), active: route().current('admin.karyawan.index'), label: 'Karyawan', icon: <IconKaryawan /> });
         }
 
-        // Akses Aplikasi Dropdown (superadmin only)
+        // Akses Aplikasi Dropdown (master data managers only)
         const appsSubItems = [];
 
-        if (isSuperAdmin) {
+        if (canManageMaster) {
             appsSubItems.push({ href: route('admin.applications.requests'), active: route().current('admin.applications.requests'), label: 'Kelola Permintaan' });
             appsSubItems.push({ href: route('admin.applications.index'), active: route().current('admin.applications.index'), label: 'Kelola Aplikasi' });
         }
@@ -105,11 +102,11 @@ export default function Sidebar({ mobileOpen = false, onMobileClose, unreadCount
             });
         }
 
-        // Superadmin only: Role User dropdown
-        if (isSuperAdmin) {
+        // Master data managers only: Role User dropdown
+        if (canManageMaster) {
             const roleSubItems = [
                 { href: route('admin.roles-permissions.index'), active: route().current('admin.roles-permissions.index'), label: 'Sistem IT' },
-                // { href: route('admin.roles-permissions.briefing'), active: route().current('admin.roles-permissions.briefing'), label: 'Sistem Briefing/Meeting' },
+                { href: route('admin.roles-permissions.briefing'), active: route().current('admin.roles-permissions.briefing'), label: 'Sistem Briefing/Meeting' },
                 { href: route('admin.roles-permissions.reminder'), active: route().current('admin.roles-permissions.reminder'), label: 'Sistem Reminder' },
             ];
 
@@ -127,11 +124,11 @@ export default function Sidebar({ mobileOpen = false, onMobileClose, unreadCount
     const AvatarWidget = ({ showText }) => (
         <Link
             href={route('profile.edit')}
-            className={`flex items-center h-11 rounded-2xl transition duration-150 cursor-pointer overflow-hidden
+            className={`flex items-center h-11 rounded-2xl transition-all duration-150 cursor-pointer overflow-hidden
                 ${expanded || showText ? 'gap-3 px-3' : 'justify-center px-0'}
                 ${isProfileActive
-                    ? 'bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-400'
-                    : 'hover:bg-gray-100/70 dark:hover:bg-zinc-800/60'
+                    ? 'bg-indigo-50 dark:bg-indigo-950/30 text-indigo-700 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-900/50'
+                    : 'hover:bg-gray-50 dark:hover:bg-zinc-900/40'
                 }`}
             title="Edit Profile"
         >
@@ -175,8 +172,8 @@ export default function Sidebar({ mobileOpen = false, onMobileClose, unreadCount
                             key={item.label}
                             item={item}
                             expanded={expanded}
-                            isOpen={item.id === 'apps' ? appsMenuOpen : rolesMenuOpen}
-                            setIsOpen={item.id === 'apps' ? setAppsMenuOpen : setRolesMenuOpen}
+                            isOpen={openDropdown === item.id}
+                            setIsOpen={(val) => setOpenDropdown(val ? item.id : null)}
                         />
                     ) : (
                         <NavItem key={item.label} href={item.href} active={item.active} label={item.label} expanded={expanded}>
@@ -193,10 +190,10 @@ export default function Sidebar({ mobileOpen = false, onMobileClose, unreadCount
                     onClick={handleLogout}
                     className={`flex items-center h-11 rounded-2xl text-gray-400 dark:text-zinc-500 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/20 transition duration-150 cursor-pointer w-full overflow-hidden
                         ${expanded ? 'gap-3 px-3' : 'justify-center px-0'}`}
-                    title="Log Out"
+                    title="Keluar"
                 >
                     <span className="shrink-0 w-[18px] flex justify-center"><IconLogout /></span>
-                    {expanded && <span className="text-sm font-semibold whitespace-nowrap">Log out</span>}
+                    {expanded && <span className="text-sm font-semibold whitespace-nowrap">Keluar</span>}
                 </button>
 
                 <AvatarWidget showText={false} />
@@ -206,35 +203,43 @@ export default function Sidebar({ mobileOpen = false, onMobileClose, unreadCount
 
     const mobileSidebar = (
         <>
-            {mobileOpen && (
-                <div
-                    className="md:hidden fixed inset-0 bg-black/50 backdrop-blur-sm z-30"
-                    onClick={onMobileClose}
-                />
-            )}
-            <aside className={`md:hidden fixed top-0 right-0 h-full w-64 bg-white dark:bg-zinc-950 border-l border-gray-200 dark:border-zinc-800 shadow-2xl z-40 flex flex-col transition-transform duration-300 ease-in-out ${mobileOpen ? 'translate-x-0' : 'translate-x-full'
-                }`}>
-                <div className="flex items-center justify-between px-5 py-4 border-b border-gray-100 dark:border-zinc-800">
+            {/* Backdrop */}
+            <div
+                className={`md:hidden fixed inset-0 bg-black/40 backdrop-blur-md z-30 transition-opacity duration-300 ease-in-out ${
+                    mobileOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+                }`}
+                onClick={onMobileClose}
+            />
+
+            {/* Panel */}
+            <aside className={`md:hidden fixed top-0 right-0 h-full w-[75vw] max-w-[288px] bg-white dark:bg-zinc-950 rounded-l-3xl shadow-[-8px_0_30px_rgba(0,0,0,0.12)] z-40 flex flex-col transition-transform duration-300 ease-[cubic-bezier(0.32,0.72,0,1)] ${mobileOpen ? 'translate-x-0' : 'translate-x-full'}`}>
+                {/* Header */}
+                <div className="flex items-center justify-between px-5 h-16 flex-shrink-0 border-b border-gray-100/80 dark:border-zinc-800/80">
                     <AppLogo collapsed={false} />
-                    <button onClick={onMobileClose} className="text-gray-400 hover:text-gray-600 dark:hover:text-zinc-300 transition cursor-pointer p-1">
-                        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                    <button
+                        onClick={onMobileClose}
+                        className="w-9 h-9 flex items-center justify-center rounded-xl bg-gray-100 dark:bg-zinc-800 text-gray-400 dark:text-zinc-500 hover:bg-gray-200 dark:hover:bg-zinc-700 hover:text-gray-600 dark:hover:text-zinc-300 transition-all duration-150 cursor-pointer active:scale-95"
+                        aria-label="Tutup menu"
+                    >
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
                             <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
                         </svg>
                     </button>
                 </div>
 
-                <nav className="flex-1 flex flex-col gap-0.5 px-3 pt-3 overflow-y-auto">
+                {/* Nav */}
+                <nav className="flex-1 flex flex-col gap-0.5 px-3 py-4 overflow-y-auto">
                     {navItems.map((item, index) => {
                         if (item.isDivider) {
-                            return <hr key={`div-${index}`} className="border-gray-100 dark:border-zinc-800 mx-1 my-2" />;
+                            return <hr key={`div-${index}`} className="border-gray-100 dark:border-zinc-800/60 mx-2 my-3" />;
                         }
                         return item.isDropdown ? (
                             <DropdownNavItem
                                 key={item.label}
                                 item={item}
                                 expanded={true}
-                                isOpen={item.id === 'apps' ? appsMenuOpen : rolesMenuOpen}
-                                setIsOpen={item.id === 'apps' ? setAppsMenuOpen : setRolesMenuOpen}
+                                isOpen={openDropdown === item.id}
+                                setIsOpen={(val) => setOpenDropdown(val ? item.id : null)}
                                 onClick={onMobileClose}
                             />
                         ) : (
@@ -243,39 +248,18 @@ export default function Sidebar({ mobileOpen = false, onMobileClose, unreadCount
                             </NavItem>
                         );
                     })}
-                    <button
-                        onClick={() => {
-                            onMobileClose();
-                            onOpenNotifications?.();
-                        }}
-                        className="flex items-center h-11 px-3 rounded-2xl transition duration-150 cursor-pointer w-full text-left gap-3 text-gray-400 dark:text-zinc-500 hover:text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-950/20 mt-1"
-                    >
-                        <span className="shrink-0 w-[18px] flex justify-center relative text-gray-400 dark:text-zinc-500">
-                            <svg width="18" height="18" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
-                            </svg>
-                            {unreadCount > 0 && (
-                                <span className="absolute -top-1 -right-1 h-2 w-2 bg-rose-500 rounded-full" />
-                            )}
-                        </span>
-                        <span className="text-sm font-semibold flex-1">Notifikasi</span>
-                        {unreadCount > 0 && (
-                            <span className="bg-rose-500 text-white text-[9px] font-extrabold px-2 py-0.5 rounded-full shrink-0">
-                                {unreadCount > 9 ? '9+' : unreadCount}
-                            </span>
-                        )}
-                    </button>
                 </nav>
 
-                <div className="flex flex-col gap-0.5 px-3 pt-2 pb-5 border-t border-gray-100 dark:border-zinc-800">
+                {/* Footer */}
+                <div className="flex flex-col gap-0.5 px-3 pt-3 pb-6 border-t border-gray-100/80 dark:border-zinc-800/80">
+                    <AvatarWidget showText={true} />
                     <button
                         onClick={handleLogout}
-                        className="flex items-center gap-3 h-11 px-3 rounded-2xl text-gray-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/20 transition cursor-pointer w-full"
+                        className="flex items-center gap-3 h-11 px-3 rounded-2xl text-gray-400 dark:text-zinc-500 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-950/20 transition duration-150 cursor-pointer w-full"
                     >
                         <span className="shrink-0 w-[18px] flex justify-center"><IconLogout /></span>
-                        <span className="text-sm font-semibold">Log out</span>
+                        <span className="text-sm font-semibold">Keluar</span>
                     </button>
-                    <AvatarWidget showText={true} />
                 </div>
             </aside>
         </>
@@ -295,11 +279,11 @@ function NavItem({ href, active, label, expanded, children, onClick }) {
             href={href}
             onClick={onClick}
             title={label}
-            className={`flex items-center h-11 rounded-2xl transition duration-150 overflow-hidden
+            className={`flex items-center h-11 rounded-2xl transition-all duration-150 overflow-hidden
                 ${expanded ? 'gap-3 px-3' : 'justify-center px-0'}
                 ${active
-                    ? 'bg-gray-100 dark:bg-zinc-900 text-gray-900 dark:text-white font-semibold shadow-sm'
-                    : 'text-gray-400 dark:text-zinc-550 hover:text-gray-700 dark:hover:text-zinc-200 hover:bg-gray-100/70 dark:hover:bg-zinc-800/60'
+                    ? 'bg-indigo-50 dark:bg-indigo-950/30 text-indigo-700 dark:text-indigo-400 font-semibold shadow-sm border border-indigo-100 dark:border-indigo-900/50'
+                    : 'text-gray-500 dark:text-zinc-400 hover:text-gray-800 dark:hover:text-zinc-200 hover:bg-gray-50 dark:hover:bg-zinc-900/40'
                 }`}
         >
             <span className="shrink-0 w-[18px] flex justify-center">{children}</span>
@@ -314,11 +298,11 @@ function DropdownNavItem({ item, expanded, isOpen, setIsOpen, onClick }) {
             <button
                 onClick={() => setIsOpen(!isOpen)}
                 title={item.label}
-                className={`flex items-center h-11 rounded-2xl transition duration-150 cursor-pointer w-full text-left
+                className={`flex items-center h-11 rounded-2xl transition-all duration-150 cursor-pointer w-full text-left
                     ${expanded ? 'gap-3 px-3' : 'justify-center px-0'}
                     ${item.active
-                        ? 'bg-gray-50 dark:bg-zinc-900/50 text-gray-900 dark:text-white font-semibold'
-                        : 'text-gray-400 dark:text-zinc-550 hover:text-gray-700 dark:hover:text-zinc-200 hover:bg-gray-100/70 dark:hover:bg-zinc-800/60'
+                        ? 'bg-indigo-50/60 dark:bg-indigo-950/20 text-indigo-700 dark:text-indigo-400 font-semibold'
+                        : 'text-gray-500 dark:text-zinc-400 hover:text-gray-800 dark:hover:text-zinc-200 hover:bg-gray-50 dark:hover:bg-zinc-900/40'
                     }`}
             >
                 <span className="shrink-0 w-[18px] flex justify-center">{item.icon}</span>
@@ -327,7 +311,7 @@ function DropdownNavItem({ item, expanded, isOpen, setIsOpen, onClick }) {
                 )}
                 {expanded && (
                     <svg
-                        className={`h-4 w-4 transform transition-transform duration-250 ${isOpen ? 'rotate-180' : ''}`}
+                        className={`h-4 w-4 transform transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
                         fill="none"
                         viewBox="0 0 24 24"
                         stroke="currentColor"
@@ -338,15 +322,15 @@ function DropdownNavItem({ item, expanded, isOpen, setIsOpen, onClick }) {
             </button>
 
             {expanded && isOpen && (
-                <div className="pl-8 flex flex-col gap-0.5 mt-0.5">
+                <div className="ml-6 pl-4 flex flex-col gap-0.5 mt-1 border-l-2 border-gray-100 dark:border-zinc-800">
                     {item.subItems.map((sub, index) => (
                         <Link
                             key={index}
                             href={sub.href}
                             onClick={onClick}
-                            className={`flex items-center h-9 px-3 rounded-xl text-xs font-semibold transition duration-150
+                            className={`flex items-center h-9 px-3 rounded-xl text-xs font-semibold transition-all duration-150 -ml-4
                                 ${sub.active
-                                    ? 'bg-indigo-50/60 dark:bg-indigo-950/30 text-indigo-700 dark:text-indigo-400'
+                                    ? 'bg-indigo-50 dark:bg-indigo-950/30 text-indigo-700 dark:text-indigo-400'
                                     : 'text-gray-500 dark:text-zinc-400 hover:text-gray-800 dark:hover:text-zinc-200 hover:bg-gray-50 dark:hover:bg-zinc-900/40'
                                 }`}
                         >
@@ -367,11 +351,11 @@ function IconInbox() {
     return <svg width="18" height="18" fill="currentColor" viewBox="0 0 16 16"><path d="M4.98 1a.5.5 0 0 0-.39.188L1.54 5H6a.5.5 0 0 1 .5.5 1.5 1.5 0 0 0 3 0A.5.5 0 0 1 10 5h4.46l-3.05-3.812A.5.5 0 0 0 11.02 1zm9.954 5H10.45a2.5 2.5 0 0 1-4.9 0H1.066l.32 2.562A.5.5 0 0 0 1.884 9h12.234a.5.5 0 0 0 .496-.438zM3.809.563A1.5 1.5 0 0 1 4.981 0h6.038a1.5 1.5 0 0 1 1.172.563l3.7 4.625a.5.5 0 0 1 .105.374l-.39 3.124A1.5 1.5 0 0 1 14.117 10H1.883A1.5 1.5 0 0 1 .394 8.686l-.39-3.124a.5.5 0 0 1 .106-.374zM.125 11.17A.5.5 0 0 1 .5 11H6a.5.5 0 0 1 .5.5 1.5 1.5 0 0 0 3 0 .5.5 0 0 1 .5-.5h5.5a.5.5 0 0 1 .496.562l-.39 3.124A1.5 1.5 0 0 1 14.117 16H1.883a1.5 1.5 0 0 1-1.489-1.314l-.39-3.124a.5.5 0 0 1 .121-.393zm.941.83.32 2.562a.5.5 0 0 0 .497.438h12.234a.5.5 0 0 0 .496-.438l.32-2.562H10.45a2.5 2.5 0 0 1-4.9 0z" /></svg>;
 }
 function IconMessage() {
-    return <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" class="bi bi-envelope-heart" viewBox="0 0 16 16">
+    return <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" className="bi bi-envelope-heart" viewBox="0 0 16 16">
         <path fill-rule="evenodd" d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2zm2-1a1 1 0 0 0-1 1v.217l3.235 1.94a2.8 2.8 0 0 0-.233 1.027L1 5.384v5.721l3.453-2.124q.219.416.55.835l-3.97 2.443A1 1 0 0 0 2 13h12a1 1 0 0 0 .966-.741l-3.968-2.442q.33-.421.55-.836L15 11.105V5.383l-3.002 1.801a2.8 2.8 0 0 0-.233-1.026L15 4.217V4a1 1 0 0 0-1-1zm6 2.993c1.664-1.711 5.825 1.283 0 5.132-5.825-3.85-1.664-6.843 0-5.132" /></svg>;
 }
 function IconClipboard() {
-    return <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" class="bi bi-inboxes-fill" viewBox="0 0 16 16">
+    return <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" fill="currentColor" className="bi bi-inboxes-fill" viewBox="0 0 16 16">
         <path d="M4.98 1a.5.5 0 0 0-.39.188L1.54 5H6a.5.5 0 0 1 .5.5 1.5 1.5 0 0 0 3 0A.5.5 0 0 1 10 5h4.46l-3.05-3.812A.5.5 0 0 0 11.02 1zM3.81.563A1.5 1.5 0 0 1 4.98 0h6.04a1.5 1.5 0 0 1 1.17.563l3.7 4.625a.5.5 0 0 1 .106.374l-.39 3.124A1.5 1.5 0 0 1 14.117 10H1.883A1.5 1.5 0 0 1 .394 8.686l-.39-3.124a.5.5 0 0 1 .106-.374zM.125 11.17A.5.5 0 0 1 .5 11H6a.5.5 0 0 1 .5.5 1.5 1.5 0 0 0 3 0 .5.5 0 0 1 .5-.5h5.5a.5.5 0 0 1 .496.562l-.39 3.124A1.5 1.5 0 0 1 14.117 16H1.883a1.5 1.5 0 0 1-1.489-1.314l-.39-3.124a.5.5 0 0 1 .121-.393z" /></svg>;
 }
 function IconKanban() {

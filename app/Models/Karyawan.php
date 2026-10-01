@@ -12,12 +12,6 @@ class Karyawan extends Model
 
     protected $table = 'karyawans';
 
-    protected $primaryKey = 'fid';
-    
-    public $incrementing = false;
-    
-    protected $keyType = 'string';
-
     protected $fillable = [
         'fid',
         'nama_karyawan',
@@ -25,6 +19,11 @@ class Karyawan extends Model
         'jabatan',
         'status',
     ];
+
+    public function scopeByFid($query, string $fid)
+    {
+        return $query->where('fid', $fid);
+    }
 
     /**
      * Get the user associated with the Karyawan.

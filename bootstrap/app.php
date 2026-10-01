@@ -13,20 +13,19 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
+        $middleware->trustProxies(at: '*');
+
         $middleware->web(append: [
             \App\Http\Middleware\HandleInertiaRequests::class,
+            \App\Http\Middleware\SecurityHeaders::class,
             \Illuminate\Http\Middleware\AddLinkHeadersForPreloadedAssets::class,
         ]);
 
-        $middleware->validateCsrfTokens(except: [
-            'api/*',
-        ]);
-
         $middleware->alias([
-            'admin.it' => \App\Http\Middleware\CheckAdminIT::class,
             'admin.it.ticket' => \App\Http\Middleware\CheckAdminITTicket::class,
-            'superadmin' => \App\Http\Middleware\CheckSuperAdmin::class,
+            'manage.master' => \App\Http\Middleware\CheckManageMaster::class,
             'applications.access' => \App\Http\Middleware\CheckITWorkflowAccess::class,
+            'app.permission' => \App\Http\Middleware\CheckAppPermission::class,
         ]);
     })
     ->withExceptions(function (Exceptions $exceptions): void {

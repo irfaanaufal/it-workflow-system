@@ -17,11 +17,11 @@ class UpdateTicketRequest extends FormRequest
             'judul_laporan'    => ['required', 'string', 'max:255'],
             'kategori_laporan' => ['required', 'string', 'in:new system,add feature,maintenance,fix bug'],
             'urgensi_laporan'  => ['required', 'string', 'in:blocker,high,medium,low'],
-            'kondisi_lapangan' => ['required', 'string'],
-            'keinginan_sistem' => ['required', 'string'],
-            'dampak_positif'   => ['required', 'string'],
+            'kondisi_lapangan' => ['required', 'string', 'max:5000'],
+            'keinginan_sistem' => ['required', 'string', 'max:5000'],
+            'dampak_positif'   => ['required', 'string', 'max:5000'],
             'system_ptsam_id'  => ['nullable', 'integer', 'exists:system_ptsam,id'],
-            'attachment'       => ['nullable', 'file', 'max:10240', 'mimes:jpg,jpeg,png,gif,pdf,doc,docx,xls,xlsx'],
+            'attachment'       => ['nullable', 'file', 'max:10240', 'mimetypes:image/jpeg,image/png,image/gif,application/pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/vnd.ms-excel,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'],
         ];
     }
 

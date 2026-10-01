@@ -14,6 +14,10 @@ class Ticket extends Model
 
     protected $table = 'tickets';
 
+    protected $casts = [
+        'deadline' => 'date:Y-m-d',
+    ];
+
     protected $fillable = [
         'karyawan_id',
         'judul_laporan',
@@ -24,10 +28,13 @@ class Ticket extends Model
         'dampak_positif',
         'attachment_path',
         'status',
+        'deadline',
         'admin_it_id',
         'uat_feedback',
         'revision_reason',
+        'reject_reason',
         'system_ptsam_id',
+        'link_sistem',
     ];
 
     /**

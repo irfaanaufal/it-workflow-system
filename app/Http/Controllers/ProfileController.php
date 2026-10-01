@@ -3,13 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\ProfileUpdateRequest;
-use App\Models\Karyawan;
-use App\Models\Role;
 use App\Models\User;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
@@ -64,18 +63,12 @@ class ProfileController extends Controller
             ], 422);
         }
 
-        // Get karyawan data
-        $karyawan = Karyawan::where('fid', $fid)->first();
-
         // Update user's FID
         $user->fid = $fid;
 
-        // Also assign 'user' role if not set
+        // Assign role automatically based on karyawan divisi if not set
         if (!$user->role_id) {
-            $userRole = Role::where('name', 'user')->first();
-            if ($userRole) {
-                $user->role_id = $userRole->id;
-            }
+            $user->assignRoleFromDivisi();
         }
 
         $user->save();
@@ -100,26 +93,24 @@ class ProfileController extends Controller
         ]);
 
         $user = $request->user();
+        $oldPath = $user->avatar_path;
 
-        // Delete old avatar if exists
-        if ($user->avatar_path) {
-            $oldFile = public_path($user->avatar_path);
-            if (file_exists($oldFile)) {
-                unlink($oldFile);
-            }
-        }
-
-        // Save to public/profile-photos/
         $filename = 'avatar_' . $user->id . '_' . time() . '.' . $request->file('avatar')->getClientOriginalExtension();
-        $request->file('avatar')->move(public_path('profile-photos'), $filename);
-        $path = 'profile-photos/' . $filename;
+        $request->file('avatar')->storeAs('profile-photos', $filename, 'public');
+        $newPath = 'profile-photos/' . $filename;
 
-        $user->avatar_path = $path;
-        $user->save();
+        DB::transaction(function () use ($user, $newPath, $oldPath) {
+            $user->avatar_path = $newPath;
+            $user->save();
+
+            if ($oldPath) {
+                Storage::disk('public')->delete($oldPath);
+            }
+        });
 
         return response()->json([
             'success'    => true,
-            'avatar_url' => asset($path),
+            'avatar_url' => asset($newPath),
         ]);
     }
 

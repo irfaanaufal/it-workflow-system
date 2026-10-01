@@ -7,6 +7,7 @@ use App\Models\User;
 use App\Models\UserApplication;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Inertia\Inertia;
 use Inertia\Response;
 
@@ -16,7 +17,7 @@ class ApplicationController extends Controller
     {
         $currentUser = auth()->user();
 
-        if (!$currentUser->isAdmin()) {
+        if (!$currentUser->canManageMaster('it-workflow')) {
             abort(403, 'Unauthorized action.');
         }
 
@@ -33,7 +34,7 @@ class ApplicationController extends Controller
     {
         $currentUser = auth()->user();
 
-        if (!$currentUser->isAdmin()) {
+        if (!$currentUser->canManageMaster('it-workflow')) {
             abort(403, 'Unauthorized action.');
         }
 
@@ -48,7 +49,7 @@ class ApplicationController extends Controller
     {
         $currentUser = auth()->user();
 
-        if (!$currentUser->isAdmin()) {
+        if (!$currentUser->canManageMaster('it-workflow')) {
             abort(403, 'Unauthorized action.');
         }
 
@@ -71,7 +72,7 @@ class ApplicationController extends Controller
     {
         $currentUser = auth()->user();
 
-        if (!$currentUser->isAdmin()) {
+        if (!$currentUser->canManageMaster('it-workflow')) {
             abort(403, 'Unauthorized action.');
         }
 
@@ -96,14 +97,16 @@ class ApplicationController extends Controller
     {
         $currentUser = auth()->user();
 
-        if (!$currentUser->isAdmin()) {
+        if (!$currentUser->canManageMaster('it-workflow')) {
             abort(403, 'Unauthorized action.');
         }
 
         $app = Application::findOrFail($id);
 
-        $app->userApplications()->delete();
-        $app->delete();
+        DB::transaction(function () use ($app) {
+            $app->userApplications()->delete();
+            $app->delete();
+        });
 
         return redirect()->back()->with('success', 'Aplikasi berhasil dihapus.');
     }
@@ -112,7 +115,7 @@ class ApplicationController extends Controller
     {
         $currentUser = auth()->user();
 
-        if (!$currentUser->isAdmin()) {
+        if (!$currentUser->canManageMaster('it-workflow')) {
             abort(403, 'Unauthorized action.');
         }
 

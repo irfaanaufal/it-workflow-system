@@ -2,6 +2,10 @@ import React, { useState, useMemo, useEffect } from 'react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, router, usePage } from '@inertiajs/react';
 import Modal from '@/Components/Modal';
+import { alertSuccess, alertError } from '@/Utils/alert';
+import TextInput from '@/Components/TextInput';
+import DataTable from '@/Components/DataTable';
+import MobilePagination from '@/Components/MobilePagination';
 
 export default function Manage({ applications = [] }) {
     const { errors } = usePage().props;
@@ -29,6 +33,8 @@ export default function Manage({ applications = [] }) {
     // Delete states
     const [deletingApp, setDeletingApp] = useState(null);
     const [deleting, setDeleting] = useState(false);
+    const [mobilePage, setMobilePage] = useState(1);
+    const mobilePerPage = 8;
 
     // Listen to custom event from header to open modal
     useEffect(() => {
@@ -50,6 +56,16 @@ export default function Manage({ applications = [] }) {
                 app.description?.toLowerCase().includes(q);
         });
     }, [applications, searchQuery]);
+
+    // Reset mobile page on search change
+    useEffect(() => {
+        setMobilePage(1);
+    }, [searchQuery]);
+
+    // Mobile pagination
+    const mobileTotalPages = Math.ceil(filteredApps.length / mobilePerPage);
+    const mobileStart = (mobilePage - 1) * mobilePerPage;
+    const mobileApps = filteredApps.slice(mobileStart, mobileStart + mobilePerPage);
 
     // Helpers to generate slug
     const generateSlug = (text) => {
@@ -86,6 +102,7 @@ export default function Manage({ applications = [] }) {
                 setAddName('');
                 setAddSlug('');
                 setAddDesc('');
+                alertSuccess('Aplikasi berhasil ditambahkan.');
             },
             onError: (err) => {
                 setAddError(err.name || err.slug || err.description || err.message || 'Gagal menambahkan aplikasi.');
@@ -118,6 +135,7 @@ export default function Manage({ applications = [] }) {
             onSuccess: () => {
                 setIsEditModalOpen(false);
                 setEditingApp(null);
+                alertSuccess('Aplikasi berhasil diperbarui.');
             },
             onError: (err) => {
                 setEditError(err.name || err.slug || err.description || err.message || 'Gagal memperbarui aplikasi.');
@@ -141,7 +159,9 @@ export default function Manage({ applications = [] }) {
             onSuccess: () => {
                 setIsDeleteModalOpen(false);
                 setDeletingApp(null);
+                alertSuccess('Aplikasi berhasil dihapus.');
             },
+            onError: (err) => alertError(err.message || 'Gagal menghapus aplikasi.'),
             onFinish: () => {
                 setDeleting(false);
             }
@@ -151,92 +171,112 @@ export default function Manage({ applications = [] }) {
     return (
         <AuthenticatedLayout
             title="Kelola Aplikasi"
+            subtitle="Manajemen data aplikasi"
             searchQuery={searchQuery}
             setSearchQuery={setSearchQuery}
         >
             <Head title="Kelola Aplikasi" />
 
-            <div className="py-4">
-                {/* Header */}
-                <div className="md:flex md:items-center md:justify-between mb-8">
-                    <div className="flex-1 min-w-0">
-                        <h2 className="text-2xl font-bold leading-7 text-gray-900 dark:text-white sm:text-3xl sm:truncate">
-                            Kelola Aplikasi
-                        </h2>
-                        <p className="mt-1 text-sm text-gray-550 dark:text-gray-400">
-                            Daftar aplikasi terintegrasi yang tersedia dalam sistem otorisasi terpusat.
-                        </p>
-                    </div>
+            <div className="flex-1 flex flex-col min-h-0 pb-1">
+                {/* Mobile: Card list */}
+                <div className="md:hidden space-y-3 pb-20">
+                    {mobileApps.length === 0 ? (
+                        <div className="py-16 text-center text-sm text-gray-400 dark:text-zinc-500">
+                            Belum ada data aplikasi.
+                        </div>
+                    ) : mobileApps.map(app => (
+                        <div key={app.id} className="bg-white dark:bg-zinc-900 rounded-xl border border-gray-200 dark:border-zinc-800 p-4 shadow-sm">
+                            {/* Nama */}
+                            <p className="text-sm font-bold text-gray-900 dark:text-white mb-1">{app.name}</p>
+
+                            {/* Slug */}
+                            <p className="text-xs font-semibold text-indigo-600 dark:text-indigo-400 mb-2">slug: {app.slug}</p>
+
+                            {/* Deskripsi */}
+                            {app.description && (
+                                <p className="text-xs text-gray-500 dark:text-zinc-400 line-clamp-2 mb-3">{app.description}</p>
+                            )}
+
+                            {/* Action buttons */}
+                            <div className="flex justify-end gap-2 pt-2 border-t border-gray-100 dark:border-zinc-800">
+                                <button
+                                    onClick={() => handleEditClick(app)}
+                                    title="Edit"
+                                    className="p-2.5 rounded-lg bg-amber-50 dark:bg-amber-950/20 text-amber-600 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-950/40 transition cursor-pointer"
+                                >
+                                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125" />
+                                    </svg>
+                                </button>
+                                <button
+                                    onClick={() => handleDeleteClick(app)}
+                                    title="Hapus"
+                                    className="p-2.5 rounded-lg bg-rose-50 dark:bg-rose-950/20 text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-950/40 transition cursor-pointer"
+                                >
+                                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                    </svg>
+                                </button>
+                            </div>
+                        </div>
+                    ))}
+
+                    <MobilePagination currentPage={mobilePage} totalPages={mobileTotalPages} onPageChange={setMobilePage} />
                 </div>
 
-                {/* Table Container */}
-                <div className="bg-white dark:bg-zinc-950 border border-gray-200 dark:border-zinc-800 rounded-2xl shadow-sm overflow-hidden transition-all duration-300">
-                    {filteredApps.length === 0 ? (
-                        <div className="text-center py-16">
-                            <svg className="mx-auto h-12 w-12 text-gray-300 dark:text-zinc-700" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M19.5 14.25v-2.625a3.375 3.375 0 0 0-3.375-3.375h-1.5A1.125 1.125 0 0 1 13.5 7.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H8.25m0 12.75h7.5m-7.5 3H12M10.5 2.25H5.625c-.621 0-1.125.504-1.125 1.125v17.25c0 .621.504 1.125 1.125 1.125h12.75c.621 0 1.125-.504 1.125-1.125V11.25a9 9 0 0 0-9-9Z" />
-                            </svg>
-                            <h3 className="mt-3 text-sm font-semibold text-gray-900 dark:text-white">Tidak ada data aplikasi</h3>
-                            <p className="mt-1 text-sm text-gray-555 dark:text-gray-400">Silakan tambahkan aplikasi baru menggunakan tombol di atas.</p>
-                        </div>
-                    ) : (
-                        <div className="overflow-x-auto">
-                            <table className="w-full text-left border-collapse">
-                                <thead>
-                                    <tr className="bg-gray-50 dark:bg-zinc-900/60 border-b border-gray-150 dark:border-zinc-800 text-xs font-bold text-gray-550 dark:text-zinc-400 uppercase tracking-wider">
-                                        <th className="py-4 px-6 w-1/4">Nama Aplikasi</th>
-                                        <th className="py-4 px-6 w-1/4">Slug</th>
-                                        <th className="py-4 px-6 w-2/5">Deskripsi</th>
-                                        <th className="py-4 px-6 text-right w-1/6">Aksi</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-gray-100 dark:divide-zinc-800/80">
-                                    {filteredApps.map((app) => (
-                                        <tr key={app.id} className="hover:bg-gray-50/50 dark:hover:bg-zinc-900/40 transition-colors">
-                                            <td className="py-4 px-6 whitespace-nowrap text-sm font-bold text-gray-900 dark:text-white">
-                                                {app.name}
-                                            </td>
-                                            <td className="py-4 px-6 whitespace-nowrap text-sm font-semibold text-indigo-600 dark:text-indigo-400">
-                                                {app.slug}
-                                            </td>
-                                            <td className="py-4 px-6 text-sm text-gray-600 dark:text-zinc-400">
-                                                {app.description || '-'}
-                                            </td>
-                                            <td className="px-6 py-4 text-right">
-                                                <div className="flex items-center justify-end gap-3">
-                                                    <button
-                                                        onClick={() => handleEditClick(app)}
-                                                        className="p-1.5 rounded-lg hover:bg-amber-50 dark:hover:bg-amber-950/20 text-amber-500 hover:text-amber-600 transition cursor-pointer"
-                                                        title="Ubah Data"
-                                                    >
-                                                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125" />
-                                                        </svg>
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handleDeleteClick(app)}
-                                                        className="p-1.5 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/20 text-rose-500 hover:text-rose-600 transition cursor-pointer"
-                                                        title="Hapus Data"
-                                                    >
-                                                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                                        </svg>
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-                    )}
+                {/* Desktop: DataTable — TIDAK DIUBAH */}
+                <div className="hidden md:block bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-800 rounded-2xl shadow-sm overflow-auto flex-1 flex flex-col min-h-0">
+                    <DataTable
+                        data={filteredApps}
+                        columns={[
+                            { key: 'no', label: 'No', className: 'w-12', render: (_, i) => i + 1 },
+                            { key: 'name', label: 'Nama Aplikasi', className: 'min-w-0', tdClassName: 'font-bold text-sm truncate dark:text-zinc-300' },
+                            { key: 'slug', label: 'Slug', className: 'min-w-0', tdClassName: 'font-semibold text-indigo-600 dark:text-indigo-400 text-sm truncate' },
+                            { key: 'description', label: 'Deskripsi', className: 'min-w-0', render: (row) => (
+                                <span className="text-sm text-gray-600 dark:text-zinc-400 truncate block">{row.description || '-'}</span>
+                            )},
+                            {
+                                key: 'aksi',
+                                label: 'Aksi',
+                                className: 'whitespace-nowrap',
+                                tdClassName: 'text-right',
+                                render: (row) => (
+                                    <div className="flex items-center justify-end gap-3">
+                                        <button
+                                            onClick={() => handleEditClick(row)}
+                                            className="p-1.5 rounded-lg hover:bg-amber-50 dark:hover:bg-amber-950/20 text-amber-500 hover:text-amber-600 transition cursor-pointer"
+                                            title="Ubah Data"
+                                        >
+                                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                                                <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125" />
+                                            </svg>
+                                        </button>
+                                        <button
+                                            onClick={() => handleDeleteClick(row)}
+                                            className="p-1.5 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/20 text-rose-500 hover:text-rose-600 transition cursor-pointer"
+                                            title="Hapus Data"
+                                        >
+                                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                                                <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                            </svg>
+                                        </button>
+                                    </div>
+                                )
+                            },
+                        ]}
+                        emptyState={
+                            <div className="py-16 text-center text-gray-400 dark:text-zinc-500 text-sm">
+                                Belum ada data aplikasi. Klik "+ Tambah Aplikasi" untuk memulai.
+                            </div>
+                        }
+                    />
                 </div>
             </div>
 
             {/* Tambah Aplikasi Modal */}
             <Modal show={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} maxWidth="md">
-                <div className="p-6 md:p-8 bg-white dark:bg-zinc-950 rounded-2xl border border-gray-150 dark:border-zinc-800">
-                    <div className="flex justify-between items-center mb-5 pb-4 border-b border-gray-150 dark:border-zinc-800">
+                <div className="p-6 md:p-8 bg-white dark:bg-zinc-950 rounded-2xl border border-gray-200 dark:border-zinc-800">
+                    <div className="flex justify-between items-center mb-5 pb-4 border-b border-gray-200 dark:border-zinc-800">
                         <h3 className="text-lg font-extrabold text-gray-900 dark:text-white">Tambah Aplikasi Baru</h3>
                         <button
                             onClick={() => setIsAddModalOpen(false)}
@@ -250,7 +290,7 @@ export default function Manage({ applications = [] }) {
 
                     <form onSubmit={handleAddSubmit} className="space-y-4">
                         <div>
-                            <label className="block text-xs font-bold text-gray-400 dark:text-zinc-550 uppercase tracking-wider mb-2">Nama Aplikasi</label>
+                            <label className="block text-xs font-bold text-gray-400 dark:text-zinc-500 uppercase tracking-wider mb-2">Nama Aplikasi</label>
                             <input
                                 type="text"
                                 value={addName}
@@ -262,7 +302,7 @@ export default function Manage({ applications = [] }) {
                         </div>
 
                         <div>
-                            <label className="block text-xs font-bold text-gray-400 dark:text-zinc-550 uppercase tracking-wider mb-2">Slug</label>
+                            <label className="block text-xs font-bold text-gray-400 dark:text-zinc-500 uppercase tracking-wider mb-2">Slug</label>
                             <input
                                 type="text"
                                 value={addSlug}
@@ -274,7 +314,7 @@ export default function Manage({ applications = [] }) {
                         </div>
 
                         <div>
-                            <label className="block text-xs font-bold text-gray-400 dark:text-zinc-550 uppercase tracking-wider mb-2">Deskripsi</label>
+                            <label className="block text-xs font-bold text-gray-400 dark:text-zinc-500 uppercase tracking-wider mb-2">Deskripsi</label>
                             <textarea
                                 value={addDesc}
                                 onChange={(e) => setAddDesc(e.target.value)}
@@ -285,7 +325,7 @@ export default function Manage({ applications = [] }) {
                         </div>
 
                         {addError && (
-                            <p className="text-xs font-semibold text-rose-500 flex items-center gap-1.5 pt-1">
+                            <p className="text-xs font-semibold text-rose-500 dark:text-rose-400 flex items-center gap-1.5 pt-1">
                                 <svg className="w-4 h-4 shrink-0" fill="currentColor" viewBox="0 0 20 20">
                                     <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                                 </svg>
@@ -293,11 +333,11 @@ export default function Manage({ applications = [] }) {
                             </p>
                         )}
 
-                        <div className="flex justify-end gap-2.5 pt-4 border-t border-gray-150 dark:border-zinc-800">
+                        <div className="flex justify-end gap-2.5 pt-4 border-t border-gray-200 dark:border-zinc-800">
                             <button
                                 type="button"
                                 onClick={() => setIsAddModalOpen(false)}
-                                className="bg-gray-150 hover:bg-gray-200 dark:bg-zinc-800 dark:hover:bg-zinc-750 text-gray-750 dark:text-zinc-300 font-bold py-2.5 px-5 rounded-xl text-xs transition cursor-pointer"
+                                className="bg-gray-100 hover:bg-gray-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-gray-700 dark:text-zinc-300 font-bold py-2.5 px-5 rounded-xl text-xs transition cursor-pointer"
                             >
                                 Batal
                             </button>
@@ -315,8 +355,8 @@ export default function Manage({ applications = [] }) {
 
             {/* Edit Aplikasi Modal */}
             <Modal show={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} maxWidth="md">
-                <div className="p-6 md:p-8 bg-white dark:bg-zinc-950 rounded-2xl border border-gray-150 dark:border-zinc-800">
-                    <div className="flex justify-between items-center mb-5 pb-4 border-b border-gray-150 dark:border-zinc-800">
+                <div className="p-6 md:p-8 bg-white dark:bg-zinc-950 rounded-2xl border border-gray-200 dark:border-zinc-800">
+                    <div className="flex justify-between items-center mb-5 pb-4 border-b border-gray-200 dark:border-zinc-800">
                         <h3 className="text-lg font-extrabold text-gray-900 dark:text-white">Ubah Data Aplikasi</h3>
                         <button
                             onClick={() => setIsEditModalOpen(false)}
@@ -330,7 +370,7 @@ export default function Manage({ applications = [] }) {
 
                     <form onSubmit={handleEditSubmit} className="space-y-4">
                         <div>
-                            <label className="block text-xs font-bold text-gray-400 dark:text-zinc-555 uppercase tracking-wider mb-2">Nama Aplikasi</label>
+                            <label className="block text-xs font-bold text-gray-400 dark:text-zinc-500 uppercase tracking-wider mb-2">Nama Aplikasi</label>
                             <input
                                 type="text"
                                 value={editName}
@@ -341,7 +381,7 @@ export default function Manage({ applications = [] }) {
                         </div>
 
                         <div>
-                            <label className="block text-xs font-bold text-gray-400 dark:text-zinc-555 uppercase tracking-wider mb-2">Slug</label>
+                            <label className="block text-xs font-bold text-gray-400 dark:text-zinc-500 uppercase tracking-wider mb-2">Slug</label>
                             <input
                                 type="text"
                                 value={editSlug}
@@ -351,7 +391,7 @@ export default function Manage({ applications = [] }) {
                         </div>
 
                         <div>
-                            <label className="block text-xs font-bold text-gray-400 dark:text-zinc-555 uppercase tracking-wider mb-2">Deskripsi</label>
+                            <label className="block text-xs font-bold text-gray-400 dark:text-zinc-500 uppercase tracking-wider mb-2">Deskripsi</label>
                             <textarea
                                 value={editDesc}
                                 onChange={(e) => setEditDesc(e.target.value)}
@@ -361,7 +401,7 @@ export default function Manage({ applications = [] }) {
                         </div>
 
                         {editError && (
-                            <p className="text-xs font-semibold text-rose-500 flex items-center gap-1.5 pt-1">
+                            <p className="text-xs font-semibold text-rose-500 dark:text-rose-400 flex items-center gap-1.5 pt-1">
                                 <svg className="w-4 h-4 shrink-0" fill="currentColor" viewBox="0 0 20 20">
                                     <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                                 </svg>
@@ -369,18 +409,18 @@ export default function Manage({ applications = [] }) {
                             </p>
                         )}
 
-                        <div className="flex justify-end gap-2.5 pt-4 border-t border-gray-150 dark:border-zinc-800">
+                        <div className="flex justify-end gap-2.5 pt-4 border-t border-gray-200 dark:border-zinc-800">
                             <button
                                 type="button"
                                 onClick={() => setIsEditModalOpen(false)}
-                                className="bg-gray-150 hover:bg-gray-200 dark:bg-zinc-800 dark:hover:bg-zinc-750 text-gray-750 dark:text-zinc-300 font-bold py-2.5 px-5 rounded-xl text-xs transition cursor-pointer"
+                                className="bg-gray-100 hover:bg-gray-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-gray-700 dark:text-zinc-300 font-bold py-2.5 px-5 rounded-xl text-xs transition cursor-pointer"
                             >
                                 Batal
                             </button>
                             <button
                                 type="submit"
                                 disabled={updating}
-                                className="bg-indigo-650 hover:bg-indigo-700 text-white font-bold py-2.5 px-5 rounded-xl text-xs shadow-xs transition cursor-pointer disabled:opacity-60"
+                                className="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 px-5 rounded-xl text-xs shadow-xs transition cursor-pointer disabled:opacity-60"
                             >
                                 {updating ? 'Menyimpan...' : 'Simpan Perubahan'}
                             </button>
@@ -391,22 +431,22 @@ export default function Manage({ applications = [] }) {
 
             {/* Konfirmasi Hapus Modal */}
             <Modal show={isDeleteModalOpen} onClose={() => setIsDeleteModalOpen(false)} maxWidth="sm">
-                <div className="p-6 bg-white dark:bg-zinc-950 rounded-2xl border border-gray-150 dark:border-zinc-800">
+                <div className="p-6 bg-white dark:bg-zinc-950 rounded-2xl border border-gray-200 dark:border-zinc-800">
                     <div className="text-center">
                         <svg className="mx-auto h-12 w-12 text-rose-500 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                         </svg>
                         <h3 className="text-lg font-bold text-gray-950 dark:text-white">Hapus Aplikasi</h3>
-                        <p className="text-sm text-gray-550 dark:text-gray-400 mt-2">
+                        <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
                             Apakah Anda yakin ingin menghapus aplikasi <strong>{deletingApp?.name}</strong>? Tindakan ini juga akan menghapus seluruh data permintaan akses terkait.
                         </p>
                     </div>
 
-                    <form onSubmit={handleDeleteSubmit} className="flex justify-end gap-2 mt-6 pt-4 border-t border-gray-150 dark:border-zinc-800">
+                    <form onSubmit={handleDeleteSubmit} className="flex justify-end gap-2 mt-6 pt-4 border-t border-gray-200 dark:border-zinc-800">
                         <button
                             type="button"
                             onClick={() => setIsDeleteModalOpen(false)}
-                            className="bg-gray-150 hover:bg-gray-200 dark:bg-zinc-800 dark:hover:bg-zinc-755 text-gray-750 dark:text-zinc-300 font-bold py-2.5 px-5 rounded-xl text-xs transition cursor-pointer"
+                            className="bg-gray-100 hover:bg-gray-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-gray-700 dark:text-zinc-300 font-bold py-2.5 px-5 rounded-xl text-xs transition cursor-pointer"
                         >
                             Batal
                         </button>

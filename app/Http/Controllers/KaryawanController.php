@@ -45,9 +45,9 @@ class KaryawanController extends Controller
         return back()->with('success', 'Karyawan baru berhasil ditambahkan!');
     }
 
-    public function update(Request $request, $fid)
+    public function update(Request $request, string $fid)
     {
-        $karyawan = Karyawan::findOrFail($fid);
+        $karyawan = Karyawan::byFid($fid)->firstOrFail();
 
         $validated = $request->validate([
             'nama_karyawan' => 'required|string|max:255',

@@ -1,18 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
-import { getCategoryStyles, getUrgencyBadgeStyles } from '@/Utils/ticketHelpers';
+import { alertSuccess, alertError, alertConfirm } from '@/Utils/alert';
+import { getCategoryStyles, getUrgencyBadgeStyles, sortByUrgency, todayLocalDate } from '@/Utils/ticketHelpers';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, router, usePage } from '@inertiajs/react';
-
-// Helper to sort tickets by urgency: blocker > high > medium > low
-const sortByUrgency = (tickets) => {
-    const urgencyOrder = { blocker: 0, high: 1, medium: 2, low: 3 };
-    return [...tickets].sort((a, b) => {
-        const urgencyA = urgencyOrder[a.urgensi_laporan] ?? 4;
-        const urgencyB = urgencyOrder[b.urgensi_laporan] ?? 4;
-        return urgencyA - urgencyB;
-    });
-};
 
 export default function Inbox() {
     const [tickets, setTickets] = useState([]);
@@ -21,43 +12,42 @@ export default function Inbox() {
     const [selectedTicket, setSelectedTicket] = useState(null);
     const [rejectReason, setRejectReason] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
+    const [loading, setLoading] = useState(true);
 
     const fetchTickets = () => {
         axios.get('/api/tickets/inbox')
-            .then(res => setTickets(sortByUrgency(res.data)))
-            .catch(err => console.error(err));
+            .then(res => { setTickets(sortByUrgency(res.data)); setLoading(false); })
+            .catch(() => { setLoading(false); });
     };
 
     useEffect(() => {
         fetchTickets();
     }, []);
 
-    /* -- Real-time updates via window event (dispatched by AuthenticatedLayout) -- */
-    useEffect(() => {
-        const handler = (e) => {
-            const ticket = e.detail.ticket;
-            if (ticket.status === 'inbox') {
-                setTickets(prev => {
-                    const newTickets = prev.some(t => t.id === ticket.id)
-                        ? prev.map(t => t.id === ticket.id ? ticket : t)
-                        : [ticket, ...prev];
-                    return sortByUrgency(newTickets);
-                });
-            } else {
-                setTickets(prev => sortByUrgency(prev.filter(t => t.id !== ticket.id)));
+    const handleTake = async (ticketId) => {
+        let deadline = null;
+        const confirmed = await alertConfirm('Ambil Tiket?', '', {
+            html: `
+                <div class="text-left">
+                    <label class="block text-xs font-medium text-gray-700 mb-1">Target Penyelesaian</label>
+                    <input type="date" id="swal-deadline" class="w-full border border-gray-300 dark:border-zinc-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-zinc-800 text-gray-900 dark:text-zinc-100 focus:outline-none focus:ring-2 focus:ring-blue-500" min="${todayLocalDate()}" />
+                    <p class="text-[11px] text-gray-400 dark:text-zinc-500 mt-1">Kosongkan jika belum ditentukan</p>
+                </div>
+            `,
+            confirmButtonText: 'Ya, Ambil',
+            preConfirm: () => {
+                deadline = document.getElementById('swal-deadline')?.value || null;
             }
-        };
-
-        window.addEventListener('ticket-status-updated', handler);
-        return () => window.removeEventListener('ticket-status-updated', handler);
-    }, []);
-
-    const handleTake = (ticketId) => {
-        axios.post(`/api/tickets/${ticketId}/take`)
-            .then(() => {
-                setTickets(prev => prev.filter(t => t.id !== ticketId));
-            })
-            .catch(err => alert(err.response?.data?.message || 'Gagal mengambil tiket.'));
+        });
+        if (confirmed) {
+            const payload = deadline ? { deadline } : {};
+            axios.post(`/api/tickets/${ticketId}/take`, payload)
+                .then(() => {
+                    setTickets(prev => prev.filter(t => t.id !== ticketId));
+                    alertSuccess('Tiket berhasil diambil.');
+                })
+                .catch(err => alertError(err.response?.data?.message || 'Gagal mengambil tiket.'));
+        }
     };
 
     const handleRejectClick = (ticket) => {
@@ -71,12 +61,13 @@ export default function Inbox() {
         setIsSubmitting(true);
         axios.post(`/api/tickets/${selectedTicket.id}/reject`, { reject_reason: rejectReason })
             .then(() => {
+                alertSuccess('Tiket ditolak.');
                 setTickets(prev => prev.filter(t => t.id !== selectedTicket.id));
                 setIsRejectOpen(false);
                 setSelectedTicket(null);
                 setRejectReason('');
             })
-            .catch(err => alert(err.response?.data?.message || 'Gagal menolak tiket.'))
+            .catch(err => alertError(err.response?.data?.message || 'Gagal menolak tiket.'))
             .finally(() => setIsSubmitting(false));
     };
 
@@ -96,12 +87,24 @@ export default function Inbox() {
     return (
         <AuthenticatedLayout
             title="Inbox"
+            subtitle="Antrean laporan yang perlu ditindaklanjuti"
             searchQuery={searchQuery}
             setSearchQuery={setSearchQuery}
         >
             <Head title="Inbox Laporan" />
 
-            <div className="py-4">
+            {loading ? (
+                <div className="h-[70vh] flex items-center justify-center">
+                    <div className="flex flex-col items-center gap-3">
+                        <svg className="animate-spin h-8 w-8 text-indigo-500" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-20" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
+                            <path className="opacity-80" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                        </svg>
+                        <span className="text-xs text-gray-400 dark:text-zinc-500 font-semibold">Memuat inbox…</span>
+                    </div>
+                </div>
+            ) : (
+            <div className="pb-20">
                 {filteredTickets.length === 0 ? (
                     <div className="mt-4 py-16 text-center bg-white dark:bg-zinc-900 rounded-3xl border border-gray-200 dark:border-zinc-800 shadow-sm">
                         <svg className="w-10 h-10 text-gray-300 dark:text-zinc-700 mx-auto mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
@@ -119,12 +122,13 @@ export default function Inbox() {
                     </div>
                 )}
             </div>
+            )}
 
             {/* Reject Modal */}
             {isRejectOpen && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
                     <div className="fixed inset-0 bg-black/50 dark:bg-black/70" onClick={() => !isSubmitting && setIsRejectOpen(false)} />
-                    <div className="relative bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-md border border-gray-200 dark:border-zinc-800">
+                    <div className="relative bg-white dark:bg-zinc-900 rounded-2xl shadow-2xl w-full max-w-md border border-gray-200 dark:border-zinc-800 max-h-[90vh] overflow-y-auto">
                         <div className="p-6">
                             <div className="flex items-center gap-3 mb-4">
                                 <div className="flex items-center justify-center w-10 h-10 rounded-full bg-rose-100 dark:bg-rose-950/30">
@@ -146,6 +150,7 @@ export default function Inbox() {
                                     onChange={(e) => setRejectReason(e.target.value)}
                                     className="w-full px-4 py-3 text-sm border border-gray-300 dark:border-zinc-700 rounded-xl bg-white dark:bg-zinc-800 text-gray-900 dark:text-zinc-100 placeholder-gray-400 dark:placeholder-zinc-500 focus:ring-2 focus:ring-rose-500 focus:border-rose-500 resize-none"
                                     rows={3}
+                                    maxLength={500}
                                     placeholder="Masukkan alasan penolakan..."
                                     autoFocus
                                 />
@@ -185,6 +190,9 @@ export default function Inbox() {
 }
 
 function InboxCard({ ticket, onTake, onReject, onDetail }) {
+    const user = usePage().props.auth.user;
+    const canTake = user.is_it === true;
+
     return (
         <div className="flex flex-col rounded-2xl overflow-hidden border border-gray-200/70 dark:border-zinc-800 shadow-sm hover:shadow-md transition duration-200 bg-white dark:bg-zinc-900">
 
@@ -192,19 +200,19 @@ function InboxCard({ ticket, onTake, onReject, onDetail }) {
             <div className={`p-4 flex flex-col justify-between h-[144px] ${getCategoryStyles(ticket.kategori_laporan)}`}>
                 <div>
                     <div className="flex justify-between items-start gap-2">
-                        <h3 className="font-bold text-gray-950 text-sm leading-snug line-clamp-2 flex-1">
+                        <h3 className="font-bold text-gray-950 dark:text-zinc-100 text-sm leading-snug line-clamp-2 flex-1">
                             {ticket.judul_laporan}
                         </h3>
                         <span className={`shrink-0 font-bold uppercase text-[8px] tracking-wide px-1.5 py-0.5 rounded ${getUrgencyBadgeStyles(ticket.urgensi_laporan)}`}>
                             {ticket.urgensi_laporan}
                         </span>
                     </div>
-                    <p className="text-[11px] text-gray-700/80 line-clamp-2 leading-relaxed mt-1.5">
+                    <p className="text-[11px] text-gray-700/80 dark:text-zinc-300 line-clamp-2 leading-relaxed mt-1.5">
                         {ticket.kondisi_lapangan}
                     </p>
                 </div>
                 <div className="flex items-center justify-between mt-1">
-                    <span className="text-[8px] font-extrabold px-1.5 py-0.5 rounded bg-white/70 text-gray-800 border border-gray-200/20 uppercase tracking-wide">
+                    <span className="text-[8px] font-extrabold px-1.5 py-0.5 rounded bg-white/70 dark:bg-white/10 text-gray-800 dark:text-zinc-200 border border-gray-200/20 uppercase tracking-wide">
                         {ticket.kategori_laporan}
                     </span>
                     {ticket.system_ptsam && (
@@ -235,31 +243,26 @@ function InboxCard({ ticket, onTake, onReject, onDetail }) {
 
                 {/* Actions */}
                 <div className="flex justify-between items-center pt-2 border-t border-gray-100 dark:border-zinc-800/50">
-                    <button onClick={onDetail} className="text-[11px] font-bold text-gray-400 dark:text-zinc-500 hover:text-gray-600 dark:hover:text-zinc-300 transition underline underline-offset-4 cursor-pointer"
+                    <button onClick={onDetail} className="text-[11px] font-bold text-gray-400 dark:text-zinc-500 hover:text-gray-600 dark:hover:text-zinc-300 transition underline underline-offset-4 cursor-pointer py-2 px-2 rounded-lg min-h-[44px] flex items-center"
                         title="Detail Laporan">
                         Detail
                     </button>
-                    {(() => {
-                        const user = usePage().props.auth.user;
-                        const canTake = user.role_name === 'superadmin' || user.role_name === 'admin';
-                        if (!canTake) return null;
-                        return (
-                            <div className="flex items-center gap-2">
-                                <button
-                                    onClick={() => onReject(ticket)}
-                                    className="bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/30 dark:hover:bg-rose-950/50 text-[10px] font-bold text-rose-600 dark:text-rose-400 py-1.5 px-3 rounded-lg flex items-center gap-1 transition border border-rose-200/60 dark:border-rose-900/50 cursor-pointer"
-                                >
-                                    Reject
-                                </button>
-                                <button
-                                    onClick={() => onTake(ticket.id)}
-                                    className="bg-gray-100 hover:bg-gray-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-[10px] font-bold text-gray-700 dark:text-zinc-300 py-1.5 px-3.5 rounded-lg flex items-center gap-1 transition border border-gray-200/60 dark:border-zinc-700 cursor-pointer"
-                                >
-                                    Take <span className="text-gray-400 dark:text-zinc-500 font-normal">→</span>
-                                </button>
-                            </div>
-                        );
-                    })()}
+                    {canTake && (
+                        <div className="flex items-center gap-2">
+                            <button
+                                onClick={() => onReject(ticket)}
+                                className="bg-rose-50 hover:bg-rose-100 dark:bg-rose-950/30 dark:hover:bg-rose-950/50 text-[10px] font-bold text-rose-600 dark:text-rose-400 py-2.5 px-4 rounded-lg flex items-center gap-1 transition border border-rose-200/60 dark:border-rose-900/50 cursor-pointer min-h-[44px]"
+                            >
+                                Reject
+                            </button>
+                            <button
+                                onClick={() => onTake(ticket.id)}
+                                className="bg-gray-100 hover:bg-gray-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-[10px] font-bold text-gray-700 dark:text-zinc-300 py-2.5 px-4 rounded-lg flex items-center gap-1 transition border border-gray-200/60 dark:border-zinc-700 cursor-pointer min-h-[44px]"
+                            >
+                                Take <span className="text-gray-400 dark:text-zinc-500 font-normal">→</span>
+                            </button>
+                        </div>
+                    )}
                 </div>
             </div>
         </div>

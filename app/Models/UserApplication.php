@@ -19,6 +19,7 @@ class UserApplication extends Model
         'approved_by',
         'approved_at',
         'role_id',
+        'permissions',
     ];
 
     /**
@@ -31,6 +32,7 @@ class UserApplication extends Model
         return [
             'is_active' => 'boolean',
             'approved_at' => 'datetime',
+            'permissions' => 'array',
         ];
     }
 

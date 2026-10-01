@@ -124,15 +124,15 @@ export default function Register() {
             </button>
 
             {/* Visual panel */}
-            <div className="relative hidden w-1/2 flex-col justify-between border-r border-gray-200 dark:border-white/[0.06] p-10 lg:flex transition-colors">
-                <Link href="/" className="text-[13px] font-semibold tracking-[0.32em] text-gray-700 dark:text-white/90">
+            <div className="relative hidden w-1/2 flex-col justify-between border-r border-white/[0.06] bg-[#0a0a0b] p-10 lg:flex transition-colors">
+                <Link href="/" className="text-[13px] font-semibold tracking-[0.32em] text-white/90">
                     IT-SYSTEM<sup className="ml-0.5 align-super text-[9px]">&reg;</sup>
                 </Link>
 
                 <OrbitCluster isDark={isDark} />
 
-                <div className="relative z-20 flex justify-center gap-6 text-[11px] text-gray-400 dark:text-white/30">
-                    <a href="https://heyzine.com/flip-book/a93274951b.html" target="_blank" rel="noopener noreferrer" className="transition hover:text-gray-600 dark:hover:text-white/60">
+                <div className="relative z-20 flex justify-center gap-6 text-[11px] text-white/30">
+                    <a href="https://heyzine.com/flip-book/a93274951b.html" target="_blank" rel="noopener noreferrer" className="transition hover:text-white/60">
                         Manual Book
                     </a>
                 </div>

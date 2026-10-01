@@ -13,9 +13,15 @@ abstract class TestCase extends BaseTestCase
 
         if (Schema::hasTable('roles') && \App\Models\Role::count() === 0) {
             \App\Models\Role::insert([
-                ['name' => 'user'],
-                ['name' => 'admin'],
-                ['name' => 'superadmin'],
+                ['name' => 'IT', 'level' => 1],
+                ['name' => 'Direktur Utama', 'level' => 2],
+                ['name' => 'Head Admin', 'level' => 3],
+                ['name' => 'HRD', 'level' => 4],
+                ['name' => 'Admin', 'level' => 5],
+                ['name' => 'Teknisi', 'level' => 6],
+                ['name' => 'QA', 'level' => 7],
+                ['name' => 'QC', 'level' => 8],
+                ['name' => 'Ekspedisi', 'level' => 9],
             ]);
         }
     }

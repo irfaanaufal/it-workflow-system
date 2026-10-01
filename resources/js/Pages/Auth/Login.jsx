@@ -5,7 +5,7 @@ import InputError from '@/Components/InputError';
 import InputLabel from '@/Components/InputLabel';
 import PrimaryButton from '@/Components/PrimaryButton';
 import TextInput from '@/Components/TextInput';
-import Swal from 'sweetalert2';
+import { alertWarning } from '@/Utils/alert';
 import { DotRingMark, OrbitCluster } from '@/Components/Auth/OrbitCluster';
 
 export default function Login({ status, canResetPassword, appName = 'IT-SYSTEM' }) {
@@ -36,14 +36,14 @@ export default function Login({ status, canResetPassword, appName = 'IT-SYSTEM' 
             onSuccess: () => reset('password'),
             onError: (errs) => {
                 if (errs.activation_needed) {
-                    Swal.fire({
-                        icon: 'warning',
-                        title: 'Akun Belum Diaktifkan',
-                        text: errs.activation_needed,
+                    alertWarning('Akun Belum Diaktifkan', errs.activation_needed, {
                         confirmButtonText: 'OK',
                         confirmButtonColor: '#ffffff',
                         color: '#f5f5f5',
                         background: '#141416',
+                        customClass: {
+                            confirmButton: 'swal2-confirm-white',
+                        },
                     });
                 }
                 reset('password');
@@ -53,7 +53,7 @@ export default function Login({ status, canResetPassword, appName = 'IT-SYSTEM' 
 
     return (
         <div className="flex min-h-screen w-full bg-gray-50 dark:bg-[#0a0a0b] transition-colors">
-            <Head title="Log in">
+            <Head title="Masuk">
                 <link rel="preconnect" href="https://fonts.googleapis.com" />
                 <link
                     href="https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,400;0,500;1,400&display=swap"
@@ -80,15 +80,15 @@ export default function Login({ status, canResetPassword, appName = 'IT-SYSTEM' 
             </button>
 
             {/* Visual panel */}
-            <div className="relative hidden w-1/2 flex-col justify-between border-r border-gray-200 dark:border-white/[0.06] p-10 lg:flex transition-colors">
-                <Link href="/" className="text-[13px] font-semibold tracking-[0.32em] text-gray-700 dark:text-white/90">
+            <div className="relative hidden w-1/2 flex-col justify-between border-r border-white/[0.06] bg-[#0a0a0b] p-10 lg:flex transition-colors">
+                <Link href="/" className="text-[13px] font-semibold tracking-[0.32em] text-white/90">
                     {appName}<sup className="ml-0.5 align-super text-[9px]">&reg;</sup>
                 </Link>
 
                 <OrbitCluster isDark={isDark} />
 
-                <div className="relative z-20 flex justify-center gap-6 text-[11px] text-gray-400 dark:text-white/30">
-                    <a href="https://heyzine.com/flip-book/a93274951b.html" target="_blank" rel="noopener noreferrer" className="transition hover:text-gray-600 dark:hover:text-white/60">
+                <div className="relative z-20 flex justify-center gap-6 text-[11px] text-white/30">
+                    <a href="https://heyzine.com/flip-book/a93274951b.html" target="_blank" rel="noopener noreferrer" className="transition hover:text-white/60">
                         Manual Book
                     </a>
                 </div>
@@ -107,7 +107,7 @@ export default function Login({ status, canResetPassword, appName = 'IT-SYSTEM' 
                         className="text-center text-[27px] text-gray-900 dark:text-white"
                         style={{ fontFamily: "'Newsreader', Georgia, serif" }}
                     >
-                        Log in
+                        Masuk
                     </h1>
 
                     {status && (
@@ -118,7 +118,7 @@ export default function Login({ status, canResetPassword, appName = 'IT-SYSTEM' 
 
                     <form onSubmit={submit} className="mt-8 space-y-3">
                         <div>
-                            <InputLabel htmlFor="username" value="Email or username" className="sr-only" />
+                            <InputLabel htmlFor="username" value="Email atau username" className="sr-only" />
                             <TextInput
                                 id="username"
                                 type="text"
@@ -127,7 +127,7 @@ export default function Login({ status, canResetPassword, appName = 'IT-SYSTEM' 
                                 className="block w-full rounded-xl border border-gray-300 dark:border-white/[0.08] bg-white dark:bg-white/[0.04] px-4 py-3 text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-white/30 shadow-none focus:border-indigo-400 dark:focus:border-white/25 focus:bg-white dark:focus:bg-white/[0.06] focus:ring-1 focus:ring-indigo-400 dark:focus:ring-white/20 transition-colors"
                                 autoComplete="username"
                                 isFocused={true}
-                                placeholder="Email or username"
+                                placeholder="Email atau username"
                                 onChange={(e) => setData('username', e.target.value)}
                             />
                             <InputError message={errors.username} className="mt-1.5" />
@@ -143,14 +143,14 @@ export default function Login({ status, canResetPassword, appName = 'IT-SYSTEM' 
                                 value={data.password}
                                 className="block w-full rounded-xl border border-gray-300 dark:border-white/[0.08] bg-white dark:bg-white/[0.04] px-4 py-3 pr-11 text-sm text-gray-900 dark:text-white placeholder-gray-400 dark:placeholder-white/30 shadow-none focus:border-indigo-400 dark:focus:border-white/25 focus:bg-white dark:focus:bg-white/[0.06] focus:ring-1 focus:ring-indigo-400 dark:focus:ring-white/20 transition-colors"
                                 autoComplete="current-password"
-                                placeholder="Password"
+                                placeholder="Kata Sandi"
                                 onChange={(e) => setData('password', e.target.value)}
                             />
                             <button
                                 type="button"
                                 onClick={() => setShowPassword((s) => !s)}
                                 className="absolute right-3.5 top-1/2 -translate-y-1/2 text-gray-400 dark:text-white/35 transition hover:text-gray-600 dark:hover:text-white/70"
-                                aria-label={showPassword ? 'Hide password' : 'Show password'}
+                                aria-label={showPassword ? 'Sembunyikan kata sandi' : 'Tampilkan kata sandi'}
                             >
                                 {showPassword ? (
                                     <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6">
@@ -173,7 +173,7 @@ export default function Login({ status, canResetPassword, appName = 'IT-SYSTEM' 
                                     checked={data.remember}
                                     onChange={(e) => setData('remember', e.target.checked)}
                                 />
-                                Remember me
+                                Ingat saya
                             </label>
                         </div>
 
@@ -181,7 +181,7 @@ export default function Login({ status, canResetPassword, appName = 'IT-SYSTEM' 
                             className="mt-2 w-full justify-center rounded-full border-0 bg-gray-900 dark:bg-white py-3 text-[13px] font-semibold tracking-wide text-white dark:text-[#0a0a0b] shadow-none hover:bg-gray-800 dark:hover:bg-white/90 focus:ring-2 focus:ring-gray-400 dark:focus:ring-white/30 focus:ring-offset-0 transition-colors"
                             disabled={processing}
                         >
-                            Enter
+                            Masuk
                         </PrimaryButton>
                     </form>
 
@@ -192,14 +192,14 @@ export default function Login({ status, canResetPassword, appName = 'IT-SYSTEM' 
                                 href={route('password.request')}
                                 className="transition hover:text-gray-700 dark:hover:text-white/60"
                             >
-                                Forgot password?
+                                Lupa password?
                             </Link>
                         )}
                         <Link
                             href={route('register')}
                             className="transition hover:text-gray-700 dark:hover:text-white/60"
                         >
-                            Register
+                            Daftar
                         </Link>
                     </div>
 

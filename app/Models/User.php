@@ -13,7 +13,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-#[Fillable(['name', 'username', 'email', 'password', 'fid', 'role_id', 'avatar_path'])]
+#[Fillable(['name', 'username', 'email', 'password', 'fid', 'avatar_path', 'remember_token'])]
 #[Hidden(['password', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -21,6 +21,8 @@ class User extends Authenticatable
     use HasApiTokens, HasFactory, Notifiable;
 
     protected $appends = ['avatar_url'];
+
+    private array $levelCache = [];
 
     public function getAvatarUrlAttribute(): ?string
     {
@@ -50,14 +52,86 @@ class User extends Authenticatable
         return $this->karyawan?->divisi ?? null;
     }
 
-    public function isSuperAdmin(): bool
+    /**
+     * Numeric level of the user's role for a specific application.
+     * Source of truth: users.role_id → roles.level
+     * Returns null when the user has no role assigned.
+     */
+    public function level(?string $appSlug = 'it-workflow'): ?int
     {
-        return $this->role?->name === 'superadmin';
+        if (array_key_exists($appSlug, $this->levelCache)) {
+            return $this->levelCache[$appSlug];
+        }
+
+        $level = $this->role?->level;
+        $this->levelCache[$appSlug] = $level;
+
+        return $level;
     }
 
-    public function isAdmin(): bool
+    public function isIT(?string $appSlug = 'it-workflow'): bool
     {
-        return in_array($this->role?->name, ['superadmin', 'admin']);
+        return $this->level($appSlug) === 1;
+    }
+
+    public function canManageMaster(?string $appSlug = 'it-workflow'): bool
+    {
+        return in_array($this->level($appSlug), [1, 2, 3, 4, 7], true);
+    }
+
+    public function canSeeGlobalMonitor(?string $appSlug = 'it-workflow'): bool
+    {
+        $level = $this->level($appSlug);
+        return $level !== null && $level !== 1;
+    }
+
+    /**
+     * Assign the user's role automatically based on their karyawan divisi
+     * for all applications.
+     */
+    public function assignRoleFromDivisi(): void
+    {
+        $divisiMap = [
+            'it' => 'IT',
+            'direktur' => 'Direktur Utama',
+            'direktur utama' => 'Direktur Utama',
+            'hrd' => 'HRD',
+            'admin' => 'Admin',
+            'teknisi' => 'Teknisi',
+            'qa' => 'QA',
+            'qc' => 'QC',
+            'ekspedisi' => 'Ekspedisi',
+        ];
+
+        $roleName = $divisiMap[strtolower(trim((string) $this->karyawan?->divisi))] ?? null;
+
+        if ($roleName) {
+            $roleId = Role::where('name', $roleName)->value('id');
+            $apps = Application::all();
+
+            if ($roleId) {
+                $this->role_id = $roleId;
+                $this->save();
+
+                foreach ($apps as $app) {
+                    UserApplication::updateOrCreate(
+                        ['user_id' => $this->id, 'application_id' => $app->id],
+                        ['role_id' => $roleId]
+                    );
+                }
+            }
+        }
+    }
+
+    public function ensureUserApplications(): void
+    {
+        $apps = Application::all();
+        foreach ($apps as $app) {
+            UserApplication::updateOrCreate(
+                ['user_id' => $this->id, 'application_id' => $app->id],
+                ['role_id' => $this->role_id]
+            );
+        }
     }
 
     public function logNotifikasi(): HasMany
@@ -73,7 +147,7 @@ class User extends Authenticatable
     public function applications(): BelongsToMany
     {
         return $this->belongsToMany(Application::class, 'user_applications')
-            ->withPivot('is_active', 'approved_by', 'approved_at')
+            ->withPivot('is_active', 'approved_by', 'approved_at', 'role_id')
             ->withTimestamps();
     }
 }

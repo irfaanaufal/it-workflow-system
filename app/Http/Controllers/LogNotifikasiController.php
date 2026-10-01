@@ -28,13 +28,6 @@ class LogNotifikasiController extends Controller
         $user = $request->user();
         $user->load('karyawan');
 
-        $isAdmin = $user->isAdmin();
-        $isOwner = $user->karyawan && $ticket->karyawan_id === $user->karyawan->id;
-
-        if (!$isAdmin && !$isOwner) {
-            abort(403, 'Anda tidak memiliki izin untuk melihat timeline tiket ini.');
-        }
-
         $logs = LogNotifikasi::query()
             ->where('ticket_id', $ticket->id)
             ->whereIn('action', [
@@ -48,11 +41,16 @@ class LogNotifikasiController extends Controller
                 'approved',
                 'uat_approved',
                 'ticket_rejected',
+                'returned_to_inbox',
+                'classification_changed',
+                'deadline_changed',
+                'reporter_changed',
+                'system_link_changed',
             ])
             ->orderBy('created_at')
             ->orderBy('id')
             ->get()
-            ->unique(fn (LogNotifikasi $log) => $log->action . '|' . $log->created_at?->timestamp)
+            ->unique(fn (LogNotifikasi $log) => $log->action . '|' . $log->id)
             ->values();
 
         $previous = null;
@@ -70,7 +68,75 @@ class LogNotifikasiController extends Controller
             ];
         });
 
-        return response()->json($timeline);
+        return response()->json([
+            'timeline' => $timeline,
+            'stage_durations' => $this->buildStageDurations($logs, $ticket),
+        ]);
+    }
+
+    /**
+     * Hitung durasi yang dihabiskan tiket di setiap tahapan kerja
+     * (review, to_do, in_progress, testing) dari log yang sudah ada.
+     * Durasi diakumulasi jika tiket bolak-balik ke tahap yang sama (revisi),
+     * dan tahap yang sedang berjalan dihitung live sampai sekarang.
+     *
+     * @param \Illuminate\Support\Collection<int, LogNotifikasi> $logs
+     * @return array<string, array{seconds: int, label: string, ongoing: bool}>
+     */
+    private function buildStageDurations($logs, Ticket $ticket): array
+    {
+        $stageActions = [
+            'review' => 'entered_review',
+            'to_do' => 'entered_to_do',
+            'in_progress' => 'entered_in_progress',
+            'testing' => 'entered_testing',
+        ];
+        $closeActions = ['approved', 'uat_approved', 'returned_to_inbox'];
+
+        $durations = [];
+        $lastStage = null;
+        $lastStageTime = null;
+
+        foreach ($logs as $log) {
+            $stage = array_search($log->action, $stageActions, true);
+
+            if ($stage !== false) {
+                if ($lastStage !== null && $lastStageTime !== null) {
+                    $durations[$lastStage]['seconds'] += $lastStageTime->diffInSeconds($log->created_at);
+                }
+
+                $lastStage = $stage;
+                $lastStageTime = $log->created_at;
+
+                if (!isset($durations[$stage])) {
+                    $durations[$stage] = ['seconds' => 0, 'ongoing' => false];
+                }
+
+                continue;
+            }
+
+            if (in_array($log->action, $closeActions, true) && $lastStage !== null && $lastStageTime !== null) {
+                $durations[$lastStage]['seconds'] += $lastStageTime->diffInSeconds($log->created_at);
+                $lastStage = null;
+                $lastStageTime = null;
+            }
+
+            if ($log->action === 'returned_to_inbox') {
+                $durations = [];
+            }
+        }
+
+        if ($lastStage !== null && $lastStageTime !== null && $ticket->status === $lastStage) {
+            $durations[$lastStage]['seconds'] += $lastStageTime->diffInSeconds(now());
+            $durations[$lastStage]['ongoing'] = true;
+        }
+
+        foreach ($durations as $stage => &$duration) {
+            $duration['label'] = $this->formatDuration($duration['seconds']);
+        }
+        unset($duration);
+
+        return $durations;
     }
 
     public function markAllRead(Request $request): JsonResponse

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 
+use App\Models\Ticket;
 use App\Models\TicketChecklist;
 use Illuminate\Http\JsonResponse;
 
@@ -14,13 +15,17 @@ class ChecklistController extends Controller
      */
     public function store(Request $request): JsonResponse
     {
+        abort_unless(auth()->user()->isIT('it-workflow'), 403, 'Hanya tim IT yang dapat mengelola checklist.');
+
         $request->validate([
             'ticket_id' => ['required', 'exists:tickets,id'],
             'task_name' => ['required', 'string', 'max:255'],
         ]);
 
+        $ticket = Ticket::findOrFail($request->input('ticket_id'));
+
         $checklist = TicketChecklist::create([
-            'ticket_id' => $request->input('ticket_id'),
+            'ticket_id' => $ticket->id,
             'task_name' => $request->input('task_name'),
             'is_approved' => false,
             'is_completed' => false,
@@ -37,7 +42,14 @@ class ChecklistController extends Controller
      */
     public function toggleApprove($id): JsonResponse
     {
-        $checklist = TicketChecklist::findOrFail($id);
+        abort_unless(auth()->user()->isIT('it-workflow'), 403, 'Hanya tim IT yang dapat mengelola checklist.');
+
+        $checklist = TicketChecklist::with('ticket')->findOrFail($id);
+
+        if (!$checklist->ticket) {
+            abort(404, 'Tiket terkait tidak ditemukan.');
+        }
+
         $checklist->is_approved = !$checklist->is_approved;
         $checklist->save();
 
@@ -52,7 +64,14 @@ class ChecklistController extends Controller
      */
     public function toggleComplete($id): JsonResponse
     {
-        $checklist = TicketChecklist::findOrFail($id);
+        abort_unless(auth()->user()->isIT('it-workflow'), 403, 'Hanya tim IT yang dapat mengelola checklist.');
+
+        $checklist = TicketChecklist::with('ticket')->findOrFail($id);
+
+        if (!$checklist->ticket) {
+            abort(404, 'Tiket terkait tidak ditemukan.');
+        }
+
         $checklist->is_completed = !$checklist->is_completed;
         $checklist->save();
 

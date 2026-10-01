@@ -1,0 +1,60 @@
+# ============================================================
+# Nginx Config untuk it-system
+# Letakkan di: /etc/nginx/sites-available/it-system
+# ============================================================
+
+server {
+    listen 443 ssl http2;
+    server_name sindangasih-makmur.com;
+
+    root /var/www/it-system/public;
+    index index.php index.html;
+
+    # SSL (Let's Encrypt)
+    ssl_certificate     /etc/letsencrypt/live/sindangasih-makmur.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/sindangasih-makmur.com/privkey.pem;
+    ssl_protocols       TLSv1.2 TLSv1.3;
+    ssl_ciphers         HIGH:!aNULL:!MD5;
+
+    # Security headers
+    add_header X-Frame-Options "DENY" always;
+    add_header X-Content-Type-Options "nosniff" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+
+    # Laravel routing — subdirectory /it-system/
+    location /it-system/ {
+        try_files $uri $uri/ /it-system/index.php?$query_string;
+    }
+
+    # PHP-FPM handler
+    location ~ ^/it-system/index\.php$ {
+        fastcgi_pass unix:/var/run/php/php8.3-fpm.sock;
+        fastcgi_param SCRIPT_FILENAME $realpath_root$fastcgi_script_name;
+        include fastcgi_params;
+        fastcgi_hide_header X-Powered-By;
+    }
+
+    # Deny .htaccess
+    location ~ /\.ht {
+        deny all;
+    }
+
+    # Static assets cache (Vite build output)
+    location ~* ^/it-system/build/.*\.(css|js|png|jpg|jpeg|gif|ico|svg|woff|woff2|ttf|eot)$ {
+        expires 30d;
+        add_header Cache-Control "public, immutable";
+    }
+
+    # Deny access to storage
+    location ~ ^/it-system/storage {
+        deny all;
+    }
+}
+
+# HTTP → HTTPS redirect
+server {
+    listen 80;
+    server_name sindangasih-makmur.com;
+    return 301 https://$host$request_uri;
+}

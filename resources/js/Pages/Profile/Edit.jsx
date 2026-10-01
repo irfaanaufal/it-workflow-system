@@ -48,7 +48,7 @@ export default function Edit({ mustVerifyEmail, status }) {
     const initials = user.name.split(' ').slice(0, 2).map(w => w[0]).join('').toUpperCase();
 
     return (
-        <AuthenticatedLayout title="Profil Saya">
+        <AuthenticatedLayout title="Profil Saya" subtitle="Kelola informasi profil akun Anda">
             <Head title="Profile" />
 
             <div className="py-4 md:py-6 space-y-4 w-full max-w-full">
@@ -331,6 +331,41 @@ function DeleteCard() {
             setLoading(false);
         }
     };
+
+    return (
+        <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-gray-200 dark:border-zinc-800 shadow-sm overflow-hidden">
+            <div className="px-6 py-4 border-b border-gray-100 dark:border-zinc-800">
+                <h3 className="text-sm font-bold text-gray-900 dark:text-white">Hapus Akun</h3>
+                <p className="text-xs text-gray-500 dark:text-zinc-400 mt-0.5">Tindakan ini tidak dapat dibatalkan.</p>
+            </div>
+            <div className="p-6">
+                {!confirm ? (
+                    <button onClick={() => setConfirm(true)}
+                        className="px-4 py-2 text-xs font-bold text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-800 rounded-xl hover:bg-rose-50 dark:hover:bg-rose-950/20 transition cursor-pointer">
+                        Hapus Akun
+                    </button>
+                ) : (
+                    <form onSubmit={handleDelete} className="space-y-4">
+                        <p className="text-xs text-gray-600 dark:text-zinc-300">Masukkan password Anda untuk mengkonfirmasi:</p>
+                        <input type="password" value={password} onChange={(e) => setPassword(e.target.value)}
+                            placeholder="Password"
+                            className="w-full text-xs border border-gray-200 dark:border-zinc-700 bg-gray-50 dark:bg-zinc-800 text-gray-900 dark:text-white rounded-xl px-3 py-2 focus:ring-2 focus:ring-rose-500/20 focus:border-rose-400 outline-none" />
+                        {error && <p className="text-xs text-rose-500">{error}</p>}
+                        <div className="flex gap-2">
+                            <button type="submit" disabled={loading || !password}
+                                className="px-4 py-2 text-xs font-bold text-white bg-rose-600 rounded-xl hover:bg-rose-700 disabled:opacity-50 transition cursor-pointer">
+                                {loading ? 'Menghapus...' : 'Ya, Hapus'}
+                            </button>
+                            <button type="button" onClick={() => { setConfirm(false); setPassword(''); setError(''); }}
+                                className="px-4 py-2 text-xs font-bold text-gray-600 dark:text-zinc-400 border border-gray-200 dark:border-zinc-700 rounded-xl hover:bg-gray-50 dark:hover:bg-zinc-800 transition cursor-pointer">
+                                Batal
+                            </button>
+                        </div>
+                    </form>
+                )}
+            </div>
+        </div>
+    );
 }
 
 /* ─── Reusable Field wrapper ─── */

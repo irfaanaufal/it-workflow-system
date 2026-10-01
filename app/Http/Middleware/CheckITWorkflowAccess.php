@@ -13,11 +13,11 @@ class CheckITWorkflowAccess
         $user = $request->user();
 
         if (!$user) {
-            return $next($request);
+            abort(401, 'Unauthenticated.');
         }
 
-        // Superadmin dan admin selalu punya akses
-        if ($user->isAdmin()) {
+        // Master-data managers (levels 1, 2, 3, 4, 7) always have access
+        if ($user->canManageMaster('it-workflow')) {
             return $next($request);
         }
 
@@ -31,17 +31,12 @@ class CheckITWorkflowAccess
 
         if (!$hasAccess) {
             if ($request->expectsJson() || $request->header('X-Inertia')) {
-                if ($request->header('X-Inertia')) {
-                    return redirect()->route('login')
-                        ->withErrors(['activation_needed' => 'Anda tidak memiliki akses aktif ke aplikasi IT Workflow. Hubungi Team IT untuk diaktifkan.']);
-                }
                 return response()->json([
                     'message' => 'Anda tidak memiliki akses aktif ke aplikasi IT Workflow.'
                 ], 403);
             }
 
-            return redirect()->route('login')
-                ->withErrors(['activation_needed' => 'Anda tidak memiliki akses aktif ke aplikasi IT Workflow. Hubungi Team IT untuk diaktifkan.']);
+            abort(403, 'Anda tidak memiliki akses aktif ke aplikasi IT Workflow. Hubungi Team IT untuk diaktifkan.');
         }
 
         return $next($request);

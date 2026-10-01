@@ -9,8 +9,23 @@ class RoleSeeder extends Seeder
 {
     public function run(): void
     {
-        Role::firstOrCreate(['name' => 'superadmin']);
-        Role::firstOrCreate(['name' => 'admin']);
-        Role::firstOrCreate(['name' => 'user']);
+        $roles = [
+            'IT' => 1,
+            'Direktur Utama' => 2,
+            'Head Admin' => 3,
+            'HRD' => 4,
+            'Admin' => 5,
+            'Teknisi' => 6,
+            'QA' => 7,
+            'QC' => 8,
+            'Ekspedisi' => 9,
+        ];
+
+        foreach ($roles as $name => $level) {
+            Role::updateOrCreate(
+                ['name' => $name],
+                ['level' => $level]
+            );
+        }
     }
 }

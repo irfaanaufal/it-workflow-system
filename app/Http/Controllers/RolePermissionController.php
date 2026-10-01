@@ -31,9 +31,25 @@ class RolePermissionController extends Controller
         ]);
 
         $user = User::findOrFail($id);
-        $user->update([
-            'role_id' => $validated['role_id'],
-        ]);
+        $currentUser = $request->user();
+
+        if ($user->id === $currentUser->id) {
+            return redirect()->back()->withErrors(['message' => 'Anda tidak dapat mengubah peran Anda sendiri.']);
+        }
+
+        $newRole = Role::find($validated['role_id']);
+        if ($currentUser->level() === null) {
+            return redirect()->back()->withErrors(['message' => 'Anda tidak memiliki role untuk mengubah peran pengguna lain.']);
+        }
+        if ($newRole && $newRole->level < $currentUser->level()) {
+            return redirect()->back()->withErrors(['message' => 'Tidak dapat menetapkan peran dengan level lebih tinggi.']);
+        }
+        if ($user->level() !== null && $currentUser->level() > $user->level()) {
+            return redirect()->back()->withErrors(['message' => 'Tidak dapat mengubah peran pengguna dengan level lebih tinggi dari Anda.']);
+        }
+
+        $user->role_id = $validated['role_id'];
+        $user->save();
 
         return redirect()->back()->with('success', 'Peran pengguna berhasil diperbarui.');
     }
@@ -41,16 +57,21 @@ class RolePermissionController extends Controller
     public function briefingRoles(): Response
     {
         $roles = Role::all();
-        $app = Application::where('slug', 'absensi-meeting')->first();
+        $app = Application::where('name', 'Meeting Attendance')->first();
 
         $userApps = UserApplication::with(['user.role', 'user.karyawan', 'role'])
             ->where('application_id', $app?->id)
             ->where('is_active', true)
             ->get();
 
-        return Inertia::render('Admin/RolesBriefing', [
+        return Inertia::render('Admin/RolesSystemAccess', [
             'roles' => $roles,
             'userApps' => $userApps,
+            'title' => 'Peran Pengguna Briefing/Meeting',
+            'subtitle' => 'Pengaturan peran pengguna khusus untuk sistem Briefing/Meeting',
+            'routeName' => 'admin.users.update-briefing-role',
+            'systemLabel' => 'Briefing/Meeting',
+            'showGlobalRole' => true,
         ]);
     }
 
@@ -61,6 +82,17 @@ class RolePermissionController extends Controller
         ]);
 
         $userApp = UserApplication::findOrFail($id);
+        $currentUser = $request->user();
+
+        if ($currentUser->level() === null) {
+            return redirect()->back()->withErrors(['message' => 'Anda tidak memiliki role untuk mengubah peran pengguna lain.']);
+        }
+
+        $targetUser = $userApp->user;
+        if ($targetUser && $targetUser->level() !== null && $currentUser->level() > $targetUser->level()) {
+            return redirect()->back()->withErrors(['message' => 'Tidak dapat mengubah peran pengguna dengan level lebih tinggi dari Anda.']);
+        }
+
         $userApp->update([
             'role_id' => $validated['role_id'],
         ]);
@@ -78,9 +110,14 @@ class RolePermissionController extends Controller
             ->where('is_active', true)
             ->get();
 
-        return Inertia::render('Admin/RolesReminder', [
+        return Inertia::render('Admin/RolesSystemAccess', [
             'roles' => $roles,
             'userApps' => $userApps,
+            'title' => 'Peran Pengguna - Reminder',
+            'subtitle' => 'Pengaturan pengingat otomatis peran',
+            'routeName' => 'admin.users.update-reminder-role',
+            'systemLabel' => 'Reminder',
+            'showGlobalRole' => false,
         ]);
     }
 
@@ -88,19 +125,23 @@ class RolePermissionController extends Controller
     {
         $validated = $request->validate([
             'role_id' => ['nullable', 'exists:roles,id'],
-            'can_use_chatbot' => ['nullable', 'boolean'],
         ]);
 
         $userApp = UserApplication::findOrFail($id);
+        $currentUser = $request->user();
+
+        if ($currentUser->level() === null) {
+            return redirect()->back()->withErrors(['message' => 'Anda tidak memiliki role untuk mengubah peran pengguna lain.']);
+        }
+
+        $targetUser = $userApp->user;
+        if ($targetUser && $targetUser->level() !== null && $currentUser->level() > $targetUser->level()) {
+            return redirect()->back()->withErrors(['message' => 'Tidak dapat mengubah peran pengguna dengan level lebih tinggi dari Anda.']);
+        }
+
         $userApp->update([
             'role_id' => $validated['role_id'],
         ]);
-
-        if (array_key_exists('can_use_chatbot', $validated)) {
-            $userApp->user->update([
-                'can_use_chatbot' => (bool) $validated['can_use_chatbot'],
-            ]);
-        }
 
         return redirect()->back()->with('success', 'Peran pengguna untuk sistem Reminder berhasil diperbarui.');
     }

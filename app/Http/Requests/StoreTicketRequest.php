@@ -18,10 +18,10 @@ class StoreTicketRequest extends FormRequest
             'judul_laporan'    => ['required', 'string', 'max:255'],
             'kategori_laporan' => ['required', 'string', 'in:new system,add feature,maintenance,fix bug'],
             'urgensi_laporan'  => ['required', 'string', 'in:blocker,high,medium,low'],
-            'kondisi_lapangan' => ['required', 'string'],
-            'keinginan_sistem' => ['required', 'string'],
-            'dampak_positif'   => ['required', 'string'],
-            'attachment'       => ['nullable', 'image', 'mimes:png,jpg,jpeg', 'max:2048'],
+            'kondisi_lapangan' => ['required', 'string', 'max:5000'],
+            'keinginan_sistem' => ['required', 'string', 'max:5000'],
+            'dampak_positif'   => ['required', 'string', 'max:5000'],
+            'attachment'       => ['nullable', 'image', 'mimes:png,jpg,jpeg,pdf', 'max:5120'],
             'system_ptsam_id'  => ['nullable', 'integer', 'exists:system_ptsam,id'],
         ];
     }

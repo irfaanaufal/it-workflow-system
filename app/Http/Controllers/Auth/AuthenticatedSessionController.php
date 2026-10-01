@@ -31,8 +31,8 @@ class AuthenticatedSessionController extends Controller
 
         $user = Auth::user();
 
-        // Superadmin & admin bypass workflow access check
-        if (!$user->isAdmin()) {
+        // IT (level 1) bypass workflow access check
+        if (!$user->isIT('it-workflow')) {
             $app = Application::firstOrCreate(
                 ['slug' => 'it-workflow'],
                 ['name' => 'IT Workflow', 'description' => 'Sistem manajemen workflow teknologi informasi.']
@@ -47,11 +47,12 @@ class AuthenticatedSessionController extends Controller
                 $userApp = UserApplication::create([
                     'user_id' => $user->id,
                     'application_id' => $app->id,
+                    'role_id' => $user->role_id,
                     'is_active' => false,
                 ]);
 
-                // Create notification for admin
-                $adminUsers = User::whereHas('role', fn($q) => $q->whereIn('name', ['superadmin', 'admin']))->get();
+                // Create notification for admin (IT users via users.role_id → roles.level)
+                $adminUsers = User::whereHas('role', fn($q) => $q->where('level', 1))->get();
                 $adminUsers->each(function ($admin) use ($user) {
                     LogNotifikasi::create([
                         'user_id' => $admin->id,
@@ -88,17 +89,15 @@ class AuthenticatedSessionController extends Controller
 
         $request->session()->regenerate();
 
-        // Auto-verify email for superadmin & admin if not yet verified
-        if ($user->isAdmin() && is_null($user->email_verified_at)) {
+        // Auto-verify email for IT if not yet verified
+        if ($user->isIT('it-workflow') && is_null($user->email_verified_at)) {
             $user->update(['email_verified_at' => now()]);
         }
 
-        if ($user->isSuperAdmin()) {
-            $redirectUrl = route('dashboard');
-        } elseif ($user->isAdmin()) {
-            $redirectUrl = route('admin.inbox');
+        if ($user->level('it-workflow') === 2) {
+            $redirectUrl = route('global-monitor');
         } else {
-            $redirectUrl = route('my-requests');
+            $redirectUrl = route('dashboard');
         }
 
         return redirect()->intended($redirectUrl);

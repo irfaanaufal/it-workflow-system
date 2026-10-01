@@ -2,7 +2,9 @@
 
 namespace Database\Factories;
 
+use App\Models\Application;
 use App\Models\User;
+use App\Models\UserApplication;
 use Illuminate\Database\Eloquent\Factories\Factory;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Str;
@@ -31,7 +33,7 @@ class UserFactory extends Factory
             'email_verified_at' => now(),
             'password' => static::$password ??= Hash::make('password'),
             'remember_token' => Str::random(10),
-            'role_id' => \App\Models\Role::where('name', 'user')->first()?->id,
+            'role_id' => null,
         ];
     }
 
@@ -45,17 +47,37 @@ class UserFactory extends Factory
         ]);
     }
 
-    public function admin(): static
+    public function role(string $name): static
     {
-        return $this->state(fn (array $attributes) => [
-            'role_id' => \App\Models\Role::where('name', 'admin')->first()?->id,
-        ]);
-    }
+        return $this->afterCreating(function (User $user) use ($name) {
+            $role = \App\Models\Role::where('name', $name)->first();
+            if (!$role) {
+                return;
+            }
 
-    public function superadmin(): static
-    {
-        return $this->state(fn (array $attributes) => [
-            'role_id' => \App\Models\Role::where('name', 'superadmin')->first()?->id,
-        ]);
+            // Source of truth: users.role_id
+            $user->role_id = $role->id;
+            $user->save();
+
+            // Ensure standard applications exist
+            $apps = Application::all();
+            if ($apps->isEmpty()) {
+                $apps = collect([
+                    Application::create(['name' => 'IT Workflow', 'slug' => 'it-workflow', 'description' => 'Sistem manajemen workflow teknologi informasi.']),
+                    Application::create(['name' => 'Meeting Attendance', 'slug' => 'absensi-meeting', 'description' => 'Aplikasi pencatatan absensi rapat.']),
+                    Application::create(['name' => 'Reminder', 'slug' => 'reminder', 'description' => 'Sistem pengingat jadwal dan tugas.']),
+                    Application::create(['name' => 'Shortly', 'slug' => 'shortly', 'description' => 'Aplikasi pemendek kustom tautan internal.']),
+                ]);
+            }
+
+            foreach ($apps as $app) {
+                UserApplication::create([
+                    'user_id' => $user->id,
+                    'application_id' => $app->id,
+                    'role_id' => $role->id,
+                    'is_active' => true,
+                ]);
+            }
+        });
     }
 }

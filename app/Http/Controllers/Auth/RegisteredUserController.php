@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\Karyawan;
-use App\Models\Role;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -44,7 +43,9 @@ class RegisteredUserController extends Controller
         $fid = $request->fid;
         if (!$fid) {
             try {
-                $karyawan = Karyawan::where('nama_karyawan', 'like', trim($request->name))->first();
+                $karyawan = Karyawan::where('nama_karyawan', trim($request->name))
+                    ->where('status', 'Active')
+                    ->first();
                 if ($karyawan && !User::where('fid', $karyawan->fid)->exists()) {
                     $fid = $karyawan->fid;
                 }
@@ -53,21 +54,20 @@ class RegisteredUserController extends Controller
             }
         }
 
-        $userRole = Role::where('name', 'user')->first();
-
         $user = User::create([
             'name' => $request->name,
             'username' => $request->username,
             'email' => $request->email,
             'fid' => $fid,
-            'role_id' => $userRole?->id,
+            'role_id' => null,
             'password' => Hash::make($request->password),
+            'remember_token' => \Illuminate\Support\Str::random(10),
         ]);
 
-        // Automatically verify email and generate remember_token on registration
-        $user->email_verified_at = now();
-        $user->remember_token = \Illuminate\Support\Str::random(10);
-        $user->save();
+        // Assign role automatically based on karyawan divisi if a FID was resolved
+        if ($fid) {
+            $user->assignRoleFromDivisi();
+        }
 
         event(new Registered($user));
 
@@ -79,7 +79,7 @@ class RegisteredUserController extends Controller
      */
     public function checkKaryawan($fid): \Illuminate\Http\JsonResponse
     {
-        $karyawan = Karyawan::where('fid', $fid)->first();
+        $karyawan = Karyawan::byFid($fid)->first();
 
         if (!$karyawan) {
             return response()->json([

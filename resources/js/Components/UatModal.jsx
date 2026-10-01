@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
+import { alertSuccess } from '@/Utils/alert';
 
 /**
  * UAT Modal — 3-step flow:
@@ -47,6 +48,7 @@ export default function UatModal({ isOpen, onClose, ticketId, onApproved, onRevi
         setError('');
         try {
             await axios.patch(`/api/tickets/${ticketId}/uat-approve`, { uat_feedback: feedback });
+            alertSuccess('Laporan disetujui.');
             onApproved(ticketId);
             handleClose();
         } catch (err) {
@@ -63,6 +65,7 @@ export default function UatModal({ isOpen, onClose, ticketId, onApproved, onRevi
         setError('');
         try {
             await axios.patch(`/api/tickets/${ticketId}/uat-revise`, { revision_reason: reason });
+            alertSuccess('Revisi berhasil dikirim.');
             onRevised?.(ticketId);
             handleClose();
         } catch (err) {
@@ -74,7 +77,7 @@ export default function UatModal({ isOpen, onClose, ticketId, onApproved, onRevi
 
     return (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4">
-            <div className="bg-white dark:bg-zinc-900 rounded-3xl shadow-2xl w-full max-w-md overflow-hidden border border-gray-200/60 dark:border-zinc-800">
+            <div className="bg-white dark:bg-zinc-900 rounded-3xl shadow-2xl w-full max-w-md max-h-[85vh] overflow-y-auto border border-gray-200/60 dark:border-zinc-800">
 
                 {/* ─── HEADER ─── */}
                 <div className="px-7 pt-7 pb-5 border-b border-gray-100 dark:border-zinc-800 flex items-start justify-between">

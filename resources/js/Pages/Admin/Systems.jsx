@@ -2,6 +2,9 @@ import React, { useState, useMemo, useEffect } from 'react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, router, usePage } from '@inertiajs/react';
 import Modal from '@/Components/Modal';
+import { alertSuccess, alertError, alertConfirm } from '@/Utils/alert';
+import DataTable from '@/Components/DataTable';
+import MobilePagination from '@/Components/MobilePagination';
 
 export default function Systems({ systems = [] }) {
     const { errors } = usePage().props;
@@ -9,6 +12,8 @@ export default function Systems({ systems = [] }) {
     const [searchQuery, setSearchQuery] = useState('');
     const [isAddModalOpen, setIsAddModalOpen] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [mobilePage, setMobilePage] = useState(1);
+    const mobilePerPage = 8;
 
     // Add form state
     const [addName, setAddName] = useState('');
@@ -38,6 +43,11 @@ export default function Systems({ systems = [] }) {
         window.addEventListener('open-add-system-modal', handleOpenModal);
         return () => window.removeEventListener('open-add-system-modal', handleOpenModal);
     }, []);
+
+    // Reset mobile page on search
+    useEffect(() => {
+        setMobilePage(1);
+    }, [searchQuery]);
 
     // Filter systems by search query and date range
     const filteredSystems = useMemo(() => {
@@ -79,6 +89,11 @@ export default function Systems({ systems = [] }) {
         });
     }, [systems, searchQuery, startDate, endDate, dateRangeType]);
 
+    // Mobile pagination
+    const mobileTotalPages = Math.ceil(filteredSystems.length / mobilePerPage);
+    const mobileStart = (mobilePage - 1) * mobilePerPage;
+    const mobileSystems = filteredSystems.slice(mobileStart, mobileStart + mobilePerPage);
+
     const handleAddSubmit = (e) => {
         e.preventDefault();
         setAddError('');
@@ -92,6 +107,7 @@ export default function Systems({ systems = [] }) {
                 setIsAddModalOpen(false);
                 setAddName('');
                 setAddLink('');
+                alertSuccess('Sistem berhasil ditambahkan.');
             },
             onError: (err) => {
                 setAddError(err.nama_sistem || err.link_sistem || err.message || 'Gagal menambahkan sistem.');
@@ -122,6 +138,7 @@ export default function Systems({ systems = [] }) {
             onSuccess: () => {
                 setIsEditModalOpen(false);
                 setEditingSystem(null);
+                alertSuccess('Sistem berhasil diperbarui.');
             },
             onError: (err) => {
                 setEditError(err.nama_sistem || err.link_sistem || err.message || 'Gagal memperbarui sistem.');
@@ -132,12 +149,19 @@ export default function Systems({ systems = [] }) {
         });
     };
 
-    const handleDelete = (system) => {
-        if (!confirm(`Apakah Anda yakin ingin menghapus sistem "${system.nama_sistem}"?`)) return;
+    const handleDelete = async (system) => {
+        const confirmed = await alertConfirm('Hapus Sistem?', `Apakah Anda yakin ingin menghapus sistem "${system.nama_sistem}"?`, {
+            icon: 'warning',
+            confirmButtonText: 'Ya, Hapus',
+        });
+        if (!confirmed) return;
 
         router.delete(route('admin.systems.destroy', system.id), {
+            onSuccess: () => {
+                alertSuccess('Sistem berhasil dihapus.');
+            },
             onError: (err) => {
-                alert(err.message || 'Sistem tidak dapat dihapus karena masih digunakan.');
+                alertError(err.message || 'Sistem tidak dapat dihapus karena masih digunakan.');
             }
         });
     };
@@ -145,6 +169,7 @@ export default function Systems({ systems = [] }) {
     return (
         <AuthenticatedLayout
             title="Kelola Sistem"
+            subtitle="Pengaturan sistem dan konfigurasi aplikasi"
             searchQuery={searchQuery}
             setSearchQuery={setSearchQuery}
             startDate={startDate}
@@ -158,89 +183,129 @@ export default function Systems({ systems = [] }) {
         >
             <Head title="Kelola Sistem PTSAM" />
 
-            <div className="py-6 transition-colors duration-200">
-                {/* Systems List */}
-                <div className="bg-white dark:bg-zinc-900 rounded-[24px] border border-gray-200 dark:border-zinc-800 shadow-sm overflow-hidden mt-2">
-                    {filteredSystems.length === 0 ? (
-                        <div className="py-16 text-center text-gray-400 dark:text-zinc-500 text-sm">
-                            {searchQuery ? 'Tidak ada sistem yang cocok dengan pencarian Anda.' : 'Belum ada data sistem. Klik "+ Tambah Sistem" di kanan atas untuk memulai.'}
+            <div className="flex-1 flex flex-col min-h-0 pb-1">
+                {/* Mobile: Card list */}
+                <div className="md:hidden space-y-3 pb-20">
+                    {mobileSystems.length === 0 ? (
+                        <div className="py-16 text-center text-sm text-gray-400 dark:text-zinc-500">
+                            {searchQuery ? 'Tidak ada sistem yang cocok dengan pencarian Anda.' : 'Belum ada data sistem.'}
                         </div>
-                    ) : (
-                        <div className="overflow-x-auto">
-                            <table className="w-full text-left border-collapse">
-                                <thead>
-                                    <tr className="border-b border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-900/50">
-                                        <th className="px-6 py-4 text-xs font-extrabold text-gray-400 dark:text-zinc-500 uppercase tracking-wider w-[80px]">No</th>
-                                        <th className="px-6 py-4 text-xs font-extrabold text-gray-400 dark:text-zinc-500 uppercase tracking-wider">Nama Sistem</th>
-                                        <th className="px-6 py-4 text-xs font-extrabold text-gray-400 dark:text-zinc-500 uppercase tracking-wider">Link Sistem</th>
-                                        <th className="px-6 py-4 text-xs font-extrabold text-gray-400 dark:text-zinc-500 uppercase tracking-wider text-right">Aksi</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-gray-100 dark:divide-zinc-800/65">
-                                    {filteredSystems.map((system, index) => (
-                                        <tr key={system.id} className="hover:bg-gray-50/55 dark:hover:bg-zinc-800/30 transition duration-150">
-                                            <td className="px-6 py-4">
-                                                <span className="text-xs font-bold text-gray-400 dark:text-zinc-500">
-                                                    {index + 1}
-                                                </span>
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                <span className="text-sm font-bold text-gray-900 dark:text-white">
-                                                    {system.nama_sistem}
-                                                </span>
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                {system.link_sistem ? (
-                                                    <a
-                                                        href={system.link_sistem}
-                                                        target="_blank"
-                                                        rel="noopener noreferrer"
-                                                        className="text-xs font-semibold text-indigo-500 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 underline inline-flex items-center gap-1"
-                                                    >
-                                                        {system.link_sistem}
-                                                        <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                                                        </svg>
-                                                    </a>
-                                                ) : (
-                                                    <span className="text-xs text-gray-400 dark:text-zinc-650 italic">Tidak ada link</span>
-                                                )}
-                                            </td>
-                                            <td className="px-6 py-4 text-right">
-                                                <div className="flex items-center justify-end gap-3">
-                                                    <button
-                                                        onClick={() => openEditModal(system)}
-                                                        className="p-1.5 rounded-lg hover:bg-amber-50 dark:hover:bg-amber-950/20 text-amber-500 hover:text-amber-600 transition cursor-pointer"
-                                                        title="Ubah Data"
-                                                    >
-                                                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125" />
-                                                        </svg>
-                                                    </button>
-                                                    <button
-                                                        onClick={() => handleDelete(system)}
-                                                        className="p-1.5 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/20 text-rose-500 hover:text-rose-600 transition cursor-pointer"
-                                                        title="Hapus Data"
-                                                    >
-                                                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                                                        </svg>
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
+                    ) : mobileSystems.map(system => (
+                        <div key={system.id} className="bg-white dark:bg-zinc-900 rounded-xl border border-gray-200 dark:border-zinc-800 p-4 shadow-sm">
+                            <div className="flex items-start justify-between gap-3">
+                                <div className="min-w-0 flex-1">
+                                    <h4 className="text-sm font-bold text-gray-900 dark:text-white leading-snug">{system.nama_sistem}</h4>
+                                    {system.link_sistem ? (
+                                        <a
+                                            href={system.link_sistem}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="text-xs font-semibold text-indigo-500 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 underline inline-flex items-center gap-1.5 mt-1"
+                                        >
+                                            <span className="truncate">{system.link_sistem}</span>
+                                            <svg className="w-3 h-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                                                <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                            </svg>
+                                        </a>
+                                    ) : (
+                                        <span className="text-xs text-gray-400 dark:text-zinc-600 italic mt-1 block">Tidak ada link</span>
+                                    )}
+                                </div>
+                            </div>
+                            <div className="flex justify-end gap-2 mt-3 pt-3 border-t border-gray-100 dark:border-zinc-800">
+                                <button
+                                    onClick={() => openEditModal(system)}
+                                    title="Edit"
+                                    className="p-2.5 rounded-lg bg-amber-50 dark:bg-amber-950/20 text-amber-600 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-950/40 transition cursor-pointer"
+                                >
+                                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125" />
+                                    </svg>
+                                </button>
+                                <button
+                                    onClick={() => handleDelete(system)}
+                                    title="Hapus"
+                                    className="p-2.5 rounded-lg bg-rose-50 dark:bg-rose-950/20 text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-950/40 transition cursor-pointer"
+                                >
+                                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                    </svg>
+                                </button>
+                            </div>
                         </div>
-                    )}
+                    ))}
+                    <MobilePagination currentPage={mobilePage} totalPages={mobileTotalPages} onPageChange={setMobilePage} />
+                </div>
+
+                {/* Desktop: DataTable — TIDAK DIUBAH */}
+                <div className="hidden md:block bg-white dark:bg-zinc-900 rounded-2xl border border-gray-200 dark:border-zinc-800 shadow-sm overflow-auto flex-1 flex flex-col min-h-0">
+                    <DataTable
+                        data={filteredSystems}
+                        columns={[
+                            { key: 'no', label: 'No', className: 'w-12', render: (_, i) => i + 1 },
+                            { key: 'nama_sistem', label: 'Nama Sistem', className: 'min-w-0', tdClassName: 'font-bold text-sm truncate dark:text-zinc-300' },
+                            {
+                                key: 'link_sistem',
+                                label: 'Link Sistem',
+                                className: 'min-w-0',
+                                render: (row) => row.link_sistem ? (
+                                    <a
+                                        href={row.link_sistem}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-xs font-semibold text-indigo-500 hover:text-indigo-700 dark:text-indigo-400 dark:hover:text-indigo-300 underline inline-flex items-center gap-1.5 max-w-full"
+                                    >
+                                        <span className="truncate">{row.link_sistem}</span>
+                                        <svg className="w-3 h-3 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                        </svg>
+                                    </a>
+                                ) : (
+                                    <span className="text-xs text-gray-400 dark:text-zinc-600 italic">Tidak ada link</span>
+                                )
+                            },
+                            {
+                                key: 'aksi',
+                                label: 'Aksi',
+                                className: 'whitespace-nowrap',
+                                tdClassName: 'text-right',
+                                render: (row) => (
+                                    <div className="flex items-center justify-end gap-3">
+                                        <button
+                                            onClick={() => openEditModal(row)}
+                                            className="p-1.5 rounded-lg hover:bg-amber-50 dark:hover:bg-amber-950/20 text-amber-500 dark:text-amber-400 hover:text-amber-600 transition cursor-pointer"
+                                            title="Ubah Data"
+                                        >
+                                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                                                <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125" />
+                                            </svg>
+                                        </button>
+                                        <button
+                                            onClick={() => handleDelete(row)}
+                                            className="p-1.5 rounded-lg hover:bg-rose-50 dark:hover:bg-rose-950/20 text-rose-500 dark:text-rose-400 hover:text-rose-600 transition cursor-pointer"
+                                            title="Hapus Data"
+                                        >
+                                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                                                <path strokeLinecap="round" strokeLinejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                            </svg>
+                                        </button>
+                                    </div>
+                                )
+                            },
+                        ]}
+                        emptyState={
+                            <div className="py-16 text-center text-gray-400 dark:text-zinc-500 text-sm">
+                                {searchQuery ? 'Tidak ada sistem yang cocok dengan pencarian Anda.' : 'Belum ada data sistem. Klik "+ Tambah Sistem" di kanan atas untuk memulai.'}
+                            </div>
+                        }
+                    />
                 </div>
             </div>
 
             {/* Add System Modal */}
             <Modal show={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} maxWidth="md">
                 <div className="p-6 md:p-8">
-                    <div className="flex justify-between items-center mb-5 pb-4 border-b border-gray-150 dark:border-zinc-800">
+                    <div className="flex justify-between items-center mb-5 pb-4 border-b border-gray-200 dark:border-zinc-800">
                         <h3 className="text-lg font-extrabold text-gray-900 dark:text-white">Tambah Sistem Baru</h3>
                         <button
                             onClick={() => setIsAddModalOpen(false)}
@@ -275,7 +340,7 @@ export default function Systems({ systems = [] }) {
                         </div>
 
                         {addError && (
-                            <p className="text-xs text-rose-500 font-semibold flex items-center gap-1.5 pt-1">
+                            <p className="text-xs text-rose-500 dark:text-rose-400 font-semibold flex items-center gap-1.5 pt-1">
                                 <svg className="w-3.5 h-3.5 shrink-0" fill="currentColor" viewBox="0 0 20 20">
                                     <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                                 </svg>
@@ -283,11 +348,11 @@ export default function Systems({ systems = [] }) {
                             </p>
                         )}
 
-                        <div className="flex justify-end gap-2.5 pt-4 border-t border-gray-150 dark:border-zinc-800">
+                        <div className="flex justify-end gap-2.5 pt-4 border-t border-gray-200 dark:border-zinc-800">
                             <button
                                 type="button"
                                 onClick={() => setIsAddModalOpen(false)}
-                                className="bg-gray-100 hover:bg-gray-200 dark:bg-zinc-800 dark:hover:bg-zinc-750 text-gray-700 dark:text-zinc-300 font-bold py-2.5 px-5 rounded-xl text-xs transition cursor-pointer"
+                                className="bg-gray-100 hover:bg-gray-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-gray-700 dark:text-zinc-300 font-bold py-2.5 px-5 rounded-xl text-xs transition cursor-pointer"
                             >
                                 Batal
                             </button>
@@ -306,7 +371,7 @@ export default function Systems({ systems = [] }) {
             {/* Edit System Modal */}
             <Modal show={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} maxWidth="md">
                 <div className="p-6 md:p-8">
-                    <div className="flex justify-between items-center mb-5 pb-4 border-b border-gray-150 dark:border-zinc-800">
+                    <div className="flex justify-between items-center mb-5 pb-4 border-b border-gray-200 dark:border-zinc-800">
                         <h3 className="text-lg font-extrabold text-gray-900 dark:text-white">Ubah Data Sistem</h3>
                         <button
                             onClick={() => setIsEditModalOpen(false)}
@@ -341,7 +406,7 @@ export default function Systems({ systems = [] }) {
                         </div>
 
                         {editError && (
-                            <p className="text-xs text-rose-500 font-semibold flex items-center gap-1.5 pt-1">
+                            <p className="text-xs text-rose-500 dark:text-rose-400 font-semibold flex items-center gap-1.5 pt-1">
                                 <svg className="w-3.5 h-3.5 shrink-0" fill="currentColor" viewBox="0 0 20 20">
                                     <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                                 </svg>
@@ -349,11 +414,11 @@ export default function Systems({ systems = [] }) {
                             </p>
                         )}
 
-                        <div className="flex justify-end gap-2.5 pt-4 border-t border-gray-150 dark:border-zinc-800">
+                        <div className="flex justify-end gap-2.5 pt-4 border-t border-gray-200 dark:border-zinc-800">
                             <button
                                 type="button"
                                 onClick={() => setIsEditModalOpen(false)}
-                                className="bg-gray-100 hover:bg-gray-200 dark:bg-zinc-800 dark:hover:bg-zinc-750 text-gray-700 dark:text-zinc-300 font-bold py-2.5 px-5 rounded-xl text-xs transition cursor-pointer"
+                                className="bg-gray-100 hover:bg-gray-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-gray-700 dark:text-zinc-300 font-bold py-2.5 px-5 rounded-xl text-xs transition cursor-pointer"
                             >
                                 Batal
                             </button>

@@ -1,17 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, Link } from '@inertiajs/react';
+import DataTable from '@/Components/DataTable';
+import MobilePagination from '@/Components/MobilePagination';
 import { getCategoryStyles } from '@/Utils/ticketHelpers';
-
-const STATUS_MAP = {
-    inbox: { label: 'Antrean', cls: 'bg-gray-100 text-gray-600 dark:bg-zinc-800 dark:text-zinc-400 border-gray-200 dark:border-zinc-700' },
-    review: { label: 'Review', cls: 'bg-amber-50 text-amber-700 dark:bg-amber-950/30 dark:text-amber-400 border-amber-200 dark:border-amber-900' },
-    to_do: { label: 'To Do', cls: 'bg-sky-50 text-sky-700 dark:bg-sky-950/30 dark:text-sky-400 border-sky-200 dark:border-sky-900' },
-    in_progress: { label: 'In Progress', cls: 'bg-indigo-50 text-indigo-700 dark:bg-indigo-950/30 dark:text-indigo-400 border-indigo-200 dark:border-indigo-900' },
-    testing: { label: 'Testing', cls: 'bg-violet-50 text-violet-700 dark:bg-violet-950/30 dark:text-violet-400 border-violet-200 dark:border-violet-900' },
-    approved: { label: 'Selesai ✔', cls: 'bg-emerald-50 text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-400 border-emerald-200 dark:border-emerald-900' },
-    rejected: { label: 'Ditolak ✘', cls: 'bg-rose-50 text-rose-700 dark:bg-rose-950/30 dark:text-rose-400 border-rose-200 dark:border-rose-900' },
-};
+import { STATUS_CONFIG, STATUS_COLORS, STATUS } from '@/Components/ticket/constants';
 
 export default function History({ tickets }) {
     const [searchQuery, setSearchQuery] = useState('');
@@ -21,6 +14,9 @@ export default function History({ tickets }) {
     const [dateRangeLabel, setDateRangeLabel] = useState('Semua Waktu');
     const [filterCategory, setFilterCategory] = useState('all');
     const [filterUrgency, setFilterUrgency] = useState('all');
+    const [filterStatus, setFilterStatus] = useState('all');
+    const [mobilePage, setMobilePage] = useState(1);
+    const mobilePerPage = 8;
 
     const filteredTickets = React.useMemo(() => {
         return (tickets || []).filter(t => {
@@ -35,7 +31,14 @@ export default function History({ tickets }) {
                 if (!matchSearch) return false;
             }
 
-            // 2. Category
+            // 2. Status
+            if (filterStatus && filterStatus !== 'all') {
+                if (t.status !== filterStatus) {
+                    return false;
+                }
+            }
+
+            // 3. Category
             if (filterCategory && filterCategory !== 'all') {
                 if (t.kategori_laporan?.toLowerCase() !== filterCategory.toLowerCase()) {
                     return false;
@@ -77,11 +80,27 @@ export default function History({ tickets }) {
 
             return true;
         });
-    }, [tickets, searchQuery, startDate, endDate, dateRangeType, filterCategory, filterUrgency]);
+    }, [tickets, searchQuery, startDate, endDate, dateRangeType, filterCategory, filterUrgency, filterStatus]);
+
+    // Reset mobile page on filter changes
+    useEffect(() => {
+        setMobilePage(1);
+    }, [searchQuery, filterCategory, filterUrgency, filterStatus, dateRangeType, startDate, endDate]);
+
+    // Mobile pagination
+    const mobileTotalPages = Math.ceil(filteredTickets.length / mobilePerPage);
+    const mobileStart = (mobilePage - 1) * mobilePerPage;
+    const mobileTickets = filteredTickets.slice(mobileStart, mobileStart + mobilePerPage);
+
+    const formatShortDate = (dateStr) => {
+        if (!dateStr) return '-';
+        return new Date(dateStr).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' });
+    };
 
     return (
         <AuthenticatedLayout
             title="History Laporan"
+            subtitle="Riwayat seluruh laporan yang telah diproses"
             searchQuery={searchQuery}
             setSearchQuery={setSearchQuery}
             startDate={startDate}
@@ -96,104 +115,109 @@ export default function History({ tickets }) {
             setFilterCategory={setFilterCategory}
             filterUrgency={filterUrgency}
             setFilterUrgency={setFilterUrgency}
+            filterStatus={filterStatus}
+            setFilterStatus={setFilterStatus}
         >
             <Head title="History Laporan" />
 
-            <div className="py-4">
-                <div className="bg-white dark:bg-zinc-900 rounded-2xl border border-gray-200 dark:border-zinc-800 shadow-sm overflow-hidden">
-                    {/* Mobile: card list */}
-                    <div className="md:hidden divide-y divide-gray-100 dark:divide-zinc-800">
-                        {filteredTickets.length === 0 ? (
-                            <p className="px-5 py-10 text-center text-sm text-gray-400 dark:text-zinc-600">Belum ada tiket di history.</p>
-                        ) : filteredTickets.map((ticket, i) => {
-                            const s = STATUS_MAP[ticket.status] || { label: ticket.status, cls: 'bg-gray-100 text-gray-600 border-gray-200' };
-                            return (
-                                <div key={ticket.id} className="px-5 py-4">
-                                    <div className="flex items-start justify-between gap-3 mb-2">
-                                        <div>
-                                            <p className="font-bold text-gray-900 dark:text-white text-sm leading-tight">{ticket.judul_laporan}</p>
-                                            <p className="text-xs text-gray-500 dark:text-zinc-500 mt-0.5">
-                                                {ticket.karyawan?.nama_karyawan || '-'} · {ticket.karyawan?.divisi || '-'}
-                                            </p>
-                                        </div>
-                                        <span className={`text-[9px] font-bold px-2 py-1 rounded-lg border uppercase tracking-wide whitespace-nowrap shrink-0 ${s.cls}`}>
-                                            {s.label}
-                                        </span>
+            <div className="flex-1 flex flex-col min-h-0 pb-1">
+                {/* Mobile: Card list */}
+                <div className="md:hidden space-y-3 pb-20">
+                    {mobileTickets.length === 0 ? (
+                        <div className="py-16 text-center text-sm text-gray-400 dark:text-zinc-500">
+                            Belum ada tiket di history.
+                        </div>
+                    ) : mobileTickets.map(ticket => {
+                        return (
+                            <div key={ticket.id} className="bg-white dark:bg-zinc-900 rounded-xl border border-gray-200 dark:border-zinc-800 p-4 shadow-sm">
+                                {/* Header: Nama + Divisi */}
+                                <div className="flex items-start justify-between gap-2 mb-2">
+                                    <div className="min-w-0 flex-1">
+                                        <p className="text-sm font-bold text-gray-900 dark:text-white truncate">{ticket.karyawan?.nama_karyawan || '-'}</p>
+                                        <p className="text-xs text-gray-500 dark:text-zinc-400 truncate">{ticket.karyawan?.divisi || '-'}</p>
                                     </div>
-                                    {ticket.status === 'rejected' && ticket.reject_reason && (
-                                        <div className="mb-2 p-2 rounded-lg bg-rose-50 dark:bg-rose-950/20 border border-rose-100 dark:border-rose-900/30">
-                                            <p className="text-[9px] font-bold text-rose-500 uppercase mb-0.5">Alasan Penolakan</p>
-                                            <p className="text-[10px] text-rose-700 dark:text-rose-400">{ticket.reject_reason}</p>
-                                        </div>
-                                    )}
-                                    <div className="flex items-center justify-between gap-2">
-                                        <div className="flex items-center gap-2 min-w-0">
-                                            <span className={`text-[9px] font-bold px-2 py-0.5 rounded border ${getCategoryStyles(ticket.kategori_laporan)}`}>
-                                                {ticket.kategori_laporan}
-                                            </span>
-                                            <span className="text-[10px] text-gray-400 dark:text-zinc-600">
-                                                {new Date(ticket.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
-                                            </span>
-                                        </div>
-                                        <Link href={route('tickets.detail', ticket.id)} className="text-[10px] font-bold text-gray-500 dark:text-zinc-400 hover:text-gray-800 dark:hover:text-zinc-200 underline underline-offset-4 shrink-0">
-                                            Detail
-                                        </Link>
-                                    </div>
+                                    <span className="text-[10px] text-gray-400 dark:text-zinc-500 whitespace-nowrap shrink-0">{formatShortDate(ticket.created_at)}</span>
                                 </div>
-                            );
-                        })}
-                    </div>
 
-                    {/* Desktop: table */}
-                    <div className="hidden md:block overflow-x-auto">
-                        <table className="min-w-full divide-y divide-gray-100 dark:divide-zinc-800 text-left">
-                            <thead className="bg-gray-50 dark:bg-zinc-950/50">
-                                <tr>
-                                    {['No', 'Nama Pelapor', 'Divisi', 'Judul', 'Kategori', 'Status', 'Tanggal', 'Aksi'].map(h => (
-                                        <th key={h} className="px-5 py-3 text-[10px] font-bold text-gray-400 dark:text-zinc-500 uppercase tracking-widest">{h}</th>
-                                    ))}
-                                </tr>
-                            </thead>
-                            <tbody className="bg-white dark:bg-zinc-900 divide-y divide-gray-100 dark:divide-zinc-800">
-                                {filteredTickets.length === 0 ? (
-                                    <tr><td colSpan={8} className="px-5 py-10 text-center text-sm text-gray-400 dark:text-zinc-600">Belum ada tiket di history.</td></tr>
-                                ) : filteredTickets.map((ticket, i) => {
-                                    const s = STATUS_MAP[ticket.status] || { label: ticket.status, cls: 'bg-gray-100 text-gray-600 border-gray-200' };
-                                    return (
-                                        <tr key={ticket.id} className="hover:bg-gray-50/60 dark:hover:bg-zinc-800/40 transition-colors duration-100">
-                                            <td className="px-5 py-3.5 text-xs text-gray-400 dark:text-zinc-600 font-semibold">{i + 1}</td>
-                                            <td className="px-5 py-3.5 text-xs font-bold text-gray-800 dark:text-zinc-200">{ticket.karyawan?.nama_karyawan || '-'}</td>
-                                            <td className="px-5 py-3.5 text-xs text-gray-500 dark:text-zinc-400 font-medium">{ticket.karyawan?.divisi || '-'}</td>
-                                            <td className="px-5 py-3.5 text-xs font-semibold text-gray-800 dark:text-zinc-200 max-w-[200px] truncate" title={ticket.judul_laporan}>{ticket.judul_laporan}</td>
-                                            <td className="px-5 py-3.5">
-                                                <span className={`text-[9px] font-bold px-2 py-0.5 rounded border uppercase tracking-wide ${getCategoryStyles(ticket.kategori_laporan)}`}>
-                                                    {ticket.kategori_laporan}
-                                                </span>
-                                            </td>
-                                            <td className="px-5 py-3.5">
-                                                <span className={`text-[9px] font-bold px-2 py-1 rounded-lg border uppercase tracking-wide ${s.cls}`}>
-                                                    {s.label}
-                                                </span>
-                                                {ticket.status === 'rejected' && ticket.reject_reason && (
-                                                    <p className="text-[9px] text-rose-600 dark:text-rose-400 mt-1 max-w-[150px] truncate" title={ticket.reject_reason}>
-                                                        {ticket.reject_reason}
-                                                    </p>
-                                                )}
-                                            </td>
-                                            <td className="px-5 py-3.5 text-[10px] text-gray-400 dark:text-zinc-600 whitespace-nowrap">
-                                                {new Date(ticket.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' })}
-                                            </td>
-                                            <td className="px-5 py-3.5">
-                                                <Link href={route('tickets.detail', ticket.id)} className="text-[10px] font-bold text-gray-500 dark:text-zinc-400 hover:text-gray-800 dark:hover:text-zinc-200 underline underline-offset-4">
-                                                    Detail
-                                                </Link>
-                                            </td>
-                                        </tr>
-                                    );
-                                })}
-                            </tbody>
-                        </table>
-                    </div>
+                                {/* Title */}
+                                <p className="text-sm font-semibold text-gray-800 dark:text-zinc-200 leading-snug line-clamp-2 mb-2.5">{ticket.judul_laporan}</p>
+
+                                {/* Badges */}
+                                <div className="flex flex-wrap items-center gap-1.5 mb-2.5">
+                                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-lg ${getCategoryStyles(ticket.kategori_laporan)}`}>
+                                        {ticket.kategori_laporan}
+                                    </span>
+                                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-lg text-white ${STATUS_COLORS[ticket.status] || 'bg-gray-100'}`}>
+                                        {STATUS_CONFIG[ticket.status]?.label || ticket.status}
+                                    </span>
+                                </div>
+
+                                {/* Reject reason */}
+                                {ticket.status === STATUS.REJECTED && ticket.reject_reason && (
+                                    <div className="mb-2.5 p-2 rounded-lg bg-rose-50 dark:bg-rose-950/20 border border-rose-100 dark:border-rose-900/30">
+                                        <p className="text-[10px] font-bold text-rose-500 dark:text-rose-400 uppercase mb-0.5">Alasan Penolakan</p>
+                                        <p className="text-xs text-rose-700 dark:text-rose-300 line-clamp-2">{ticket.reject_reason}</p>
+                                    </div>
+                                )}
+
+                                {/* Detail link */}
+                                <div className="flex justify-end pt-2 border-t border-gray-100 dark:border-zinc-800">
+                                    <Link href={route('tickets.detail', ticket.id)} className="text-xs font-bold text-gray-400 hover:text-gray-700 dark:text-zinc-500 dark:hover:text-zinc-200 underline underline-offset-4 py-1 px-1">
+                                        Detail
+                                    </Link>
+                                </div>
+                            </div>
+                        );
+                    })}
+
+                    <MobilePagination currentPage={mobilePage} totalPages={mobileTotalPages} onPageChange={setMobilePage} />
+                </div>
+
+                {/* Desktop: DataTable — TIDAK DIUBAH */}
+                <div className="hidden md:block bg-white dark:bg-zinc-900 rounded-2xl border border-gray-200 dark:border-zinc-800 shadow-sm overflow-auto flex-1 flex flex-col min-h-0">
+                    <DataTable
+                        data={filteredTickets}
+                        columns={[
+                            { key: 'no', label: 'No', className: 'w-12 dark:text-zinc-300', render: (_, i) => i + 1 },
+                            { key: 'nama', label: 'Nama Pelapor', className: 'min-w-0', tdClassName: 'font-bold text-sm truncate dark:text-zinc-300', render: (row) => <span className="truncate block dark:text-zinc-300">{row.karyawan?.nama_karyawan || '-'}</span> },
+                            { key: 'divisi', label: 'Divisi', className: 'min-w-0', render: (row) => <span className="text-sm text-gray-600 dark:text-zinc-400 truncate block">{row.karyawan?.divisi || '-'}</span> },
+                            { key: 'judul', label: 'Judul', className: 'min-w-0', tdClassName: 'font-semibold text-sm truncate dark:text-zinc-300', render: (row) => (
+                                <span className="truncate block dark:text-zinc-300" title={row.judul_laporan}>{row.judul_laporan}</span>
+                            )},
+                            { key: 'kategori', label: 'Kategori', className: 'whitespace-nowrap', render: (row) => (
+                                <span className={`text-xs font-bold px-2 py-1 rounded-lg ${getCategoryStyles(row.kategori_laporan)}`}>
+                                    {row.kategori_laporan}
+                                </span>
+                            )},
+                            { key: 'status', label: 'Status', className: 'whitespace-nowrap', render: (row) => {
+                                return (
+                                    <div>
+                                        <span className={`text-xs font-bold px-2.5 py-1 rounded-lg text-white ${STATUS_COLORS[row.status] || 'bg-gray-200 dark:bg-zinc-700 text-gray-800 dark:text-zinc-200'}`}>
+                                            {STATUS_CONFIG[row.status]?.label || row.status}
+                                        </span>
+                                        {row.status === 'rejected' && row.reject_reason && (
+                                            <p className="text-xs text-rose-600 dark:text-rose-400 mt-1 max-w-[150px] truncate" title={row.reject_reason}>
+                                                {row.reject_reason}
+                                            </p>
+                                        )}
+                                    </div>
+                                );
+                            }},
+                            { key: 'tanggal', label: 'Tanggal', className: 'whitespace-nowrap', render: (row) => (
+                                <span className="text-xs text-gray-600 dark:text-zinc-400 whitespace-nowrap">
+                                    {row.created_at ? new Date(row.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : '-'}
+                                </span>
+                            )},
+                            { key: 'aksi', label: 'Aksi', className: 'whitespace-nowrap', tdClassName: 'text-right', render: (row) => (
+                                <Link href={route('tickets.detail', row.id)} className="text-xs font-bold text-gray-500 dark:text-zinc-400 hover:text-gray-800 dark:hover:text-zinc-200 underline underline-offset-4">
+                                    Detail
+                                </Link>
+                            )},
+                        ]}
+                        emptyState={
+                            <p className="px-5 py-16 text-center text-sm text-gray-400 dark:text-zinc-600">Belum ada tiket di history.</p>
+                        }
+                    />
                 </div>
             </div>
         </AuthenticatedLayout>

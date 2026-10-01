@@ -1,4 +1,4 @@
-// OrbitCluster - Video/GIF Background
+// OrbitCluster - Login Illustration
 import { usePage } from '@inertiajs/react';
 
 export function DotRingMark({ isDark = true }) {
@@ -25,7 +25,7 @@ export function OrbitCluster({ isDark = true }) {
     const { asset_url } = usePage().props;
 
     return (
-        <div className="absolute inset-0 z-10 flex items-center justify-center p-16">
+        <div className="absolute inset-0 z-10 flex items-center justify-center p-24">
             <style>{`
                 @keyframes oc-float {
                     0%, 100% { transform: translateY(0); }
@@ -40,8 +40,8 @@ export function OrbitCluster({ isDark = true }) {
                 }
             `}</style>
             <img
-                src={`${asset_url}/images/login.gif`}
-                alt=""
+                src={`${asset_url}/images/login.png`}
+                alt="ITSAM Login"
                 className="oc-anim max-w-full max-h-full object-contain"
                 style={{
                     animation: 'oc-float 6s ease-in-out infinite, oc-glow 4s ease-in-out infinite',

@@ -1,6 +1,5 @@
 <?php
 
-use App\Events\TicketStatusUpdated;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\TicketController;
 use App\Http\Controllers\ChecklistController;
@@ -22,14 +21,15 @@ Route::get('/dashboard', function () {
     $user = auth()->user();
     $user->load('karyawan');
 
-    $isAdmin = $user->isAdmin();
+    $showAdminDashboard = in_array($user->level('it-workflow'), [1, 2, 3]);
 
-    if (!$isAdmin) {
+    if (!$showAdminDashboard) {
         $karyawan = $user->karyawan;
         $tickets = $karyawan
             ? Ticket::with(['karyawan', 'adminIt'])
                 ->where('karyawan_id', $karyawan->id)
                 ->latest('updated_at')
+                ->limit(100)
                 ->get()
             : collect();
 
@@ -100,18 +100,18 @@ Route::get('/dashboard', function () {
 
     $allTickets = Ticket::with('karyawan')
         ->latest('created_at')
+        ->limit(100)
         ->get();
 
-    $monthlyData = Ticket::select(DB::raw('MONTH(created_at) as month'), DB::raw('count(*) as total'))
-        ->whereYear('created_at', date('Y'))
-        ->groupBy('month')
-        ->get()
-        ->pluck('total', 'month')
+    $chartDataRaw = Ticket::whereYear('created_at', date('Y'))
+        ->selectRaw('MONTH(created_at) as month, COUNT(*) as count')
+        ->groupByRaw('MONTH(created_at)')
+        ->pluck('count', 'month')
         ->toArray();
 
     $chartData = [];
     for ($i = 1; $i <= 12; $i++) {
-        $chartData[] = $monthlyData[$i] ?? 0;
+        $chartData[] = $chartDataRaw[$i] ?? 0;
     }
 
     return Inertia::render('Dashboard', [
@@ -120,10 +120,11 @@ Route::get('/dashboard', function () {
         'chartData' => $chartData,
         'tickets' => $allTickets,
         'currentYear' => (int) date('Y'),
+        'isIT' => $user->isIT('it-workflow'),
     ]);
 })->middleware(['auth', 'applications.access'])->name('dashboard');
 
-Route::middleware(['auth', 'verified'])->group(function () {
+Route::middleware(['auth', 'verified', 'manage.master'])->group(function () {
     Route::get('/admin/applications/requests', [ApplicationController::class, 'requests'])->name('admin.applications.requests');
     Route::patch('/applications/toggle', [ApplicationController::class, 'toggleAccess'])->name('applications.toggle');
     
@@ -134,15 +135,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
 });
 
 Route::middleware(['auth', 'applications.access'])->group(function () {
-    Route::get('/test-broadcast/{ticketId?}', function ($ticketId = null) {
-        $ticket = $ticketId ? Ticket::find($ticketId) : Ticket::first();
-        if (!$ticket) {
-            return 'No ticket found to test broadcast';
-        }
-        event(new TicketStatusUpdated($ticket));
-        return "Broadcasted TicketStatusUpdated event for ticket ID: " . $ticket->id;
-    });
-    
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
@@ -154,6 +146,8 @@ Route::middleware(['auth', 'applications.access'])->group(function () {
     })->name('my-requests');
 
     Route::get('/global-monitor', function () {
+        abort_unless(auth()->user()->canSeeGlobalMonitor('it-workflow'), 403, 'Unauthorized. Anda tidak memiliki izin untuk mengakses halaman ini.');
+
         return Inertia::render('User/GlobalMonitor');
     })->name('global-monitor');
 
@@ -162,19 +156,12 @@ Route::middleware(['auth', 'applications.access'])->group(function () {
     })->name('tickets.detail');
 
     Route::get('/history', function () {
-        $user = auth()->user();
-        $isAdmin = $user->isAdmin();
-
-        if ($isAdmin) {
-            $tickets = Ticket::with('karyawan')->withTrashed()->whereIn('status', ['approved', 'rejected'])->orderBy('updated_at', 'desc')->get();
-        } else {
-            $divisi = $user->karyawan?->divisi;
-            $tickets = $divisi
-                ? Ticket::whereHas('karyawan', function ($q) use ($divisi) {
-                    $q->where('divisi', $divisi);
-                })->withTrashed()->whereIn('status', ['approved', 'rejected'])->with('karyawan')->orderBy('updated_at', 'desc')->get()
-                : collect();
-        }
+        $tickets = Ticket::with('karyawan')
+            ->withTrashed()
+            ->whereIn('status', ['approved', 'rejected'])
+            ->orderBy('updated_at', 'desc')
+            ->limit(500)
+            ->get();
 
         return Inertia::render('History', [
             'tickets' => $tickets
@@ -195,7 +182,7 @@ Route::middleware(['auth', 'applications.access'])->group(function () {
         })->name('admin.ticket-detail');
     });
 
-    Route::prefix('api')->group(function () {
+    Route::prefix('api')->middleware('throttle:60,1')->group(function () {
         Route::post('/tickets', [TicketController::class, 'store']);
         Route::get('/tickets', [TicketController::class, 'index']);
         Route::get('/my-tickets', [TicketController::class, 'myTickets']);
@@ -206,8 +193,14 @@ Route::middleware(['auth', 'applications.access'])->group(function () {
         Route::middleware('admin.it.ticket')->group(function () {
             Route::get('/tickets/inbox', [TicketController::class, 'getInbox']);
             Route::post('/tickets/{id}/take', [TicketController::class, 'takeTicket']);
+            Route::post('/tickets/{id}/return-to-inbox', [TicketController::class, 'returnToInbox']);
             Route::post('/tickets/{id}/reject', [TicketController::class, 'rejectTicket']);
             Route::patch('/tickets/{id}/status', [TicketController::class, 'updateStatus']);
+            Route::patch('/tickets/{id}/classification', [TicketController::class, 'updateClassification']);
+            Route::patch('/tickets/{id}/deadline', [TicketController::class, 'updateDeadline']);
+            Route::get('/tickets/{id}/reporter-candidates', [TicketController::class, 'reporterCandidates']);
+            Route::patch('/tickets/{id}/reporter', [TicketController::class, 'updateReporter']);
+            Route::patch('/tickets/{id}/system-link', [TicketController::class, 'updateSystemLink']);
 
             Route::post('/checklists', [ChecklistController::class, 'store']);
             Route::patch('/checklists/{id}/toggle-approve', [ChecklistController::class, 'toggleApprove']);
@@ -225,7 +218,7 @@ Route::middleware(['auth', 'applications.access'])->group(function () {
         Route::delete('/tickets/{id}', [TicketController::class, 'softDelete']);
     });
 
-    Route::middleware('superadmin')->group(function () {
+    Route::middleware('manage.master')->group(function () {
         Route::get('/admin/systems', [\App\Http\Controllers\SystemPtsamController::class, 'index'])->name('admin.systems.index');
         Route::post('/admin/systems', [\App\Http\Controllers\SystemPtsamController::class, 'store'])->name('admin.systems.store');
         Route::patch('/admin/systems/{id}', [\App\Http\Controllers\SystemPtsamController::class, 'update'])->name('admin.systems.update');

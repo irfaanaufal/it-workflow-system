@@ -5,7 +5,7 @@ The database `main_db` is a shared/central database used across multiple applica
 1. **IT Workflow** (this current codebase, slug: `it-workflow`)
 2. **Reminder** (slug: `reminder`)
 3. **Shortly App** (slug: `shortly`)
-4. **Meeting Attendance** (slug: `meeting-attendance`)
+4. **Meeting Attendance** (slug: `absensi-meeting`)
 
 > [!IMPORTANT]
 > Any changes to the core schemas (`users`, `roles`, `permissions`, `role_has_permissions`, `applications`, and `user_applications`) must preserve backward compatibility as they are shared with the other applications in the portal.

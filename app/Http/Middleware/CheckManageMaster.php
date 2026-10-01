@@ -5,18 +5,19 @@ namespace App\Http\Middleware;
 use Closure;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
-use Illuminate\Support\Facades\Auth;
 
-class CheckAdminIT
+class CheckManageMaster
 {
+    /**
+     * Only users with master-data management access
+     * (levels 1 IT, 2 Direktur Utama, 3 Head Admin, 4 HRD, 7 QA) are allowed through.
+     */
     public function handle(Request $request, Closure $next): Response
     {
-        if (Auth::check()) {
-            $user = Auth::user();
+        $user = $request->user();
 
-            if ($user->isAdmin()) {
-                return $next($request);
-            }
+        if ($user && $user->canManageMaster('it-workflow')) {
+            return $next($request);
         }
 
         abort(403, 'Unauthorized. Anda tidak memiliki izin untuk mengakses halaman ini.');

@@ -1,7 +1,10 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import AuthenticatedLayout from '@/Layouts/AuthenticatedLayout';
 import { Head, router, usePage } from '@inertiajs/react';
+import { alertSuccess } from '@/Utils/alert';
 import Modal from '@/Components/Modal';
+import DataTable from '@/Components/DataTable';
+import MobilePagination from '@/Components/MobilePagination';
 
 export default function Karyawan({ karyawans = [], flash = {} }) {
     const { errors } = usePage().props;
@@ -30,6 +33,8 @@ export default function Karyawan({ karyawans = [], flash = {} }) {
     // Filter states
     const [filterDivisi, setFilterDivisi] = useState('all');
     const [filterStatus, setFilterStatus] = useState('all');
+    const [mobilePage, setMobilePage] = useState(1);
+    const mobilePerPage = 8;
 
     // Unique divisi from data
     const uniqueDivisi = useMemo(() => {
@@ -94,6 +99,16 @@ export default function Karyawan({ karyawans = [], flash = {} }) {
         });
     }, [karyawans, searchQuery, filterDivisi, filterStatus]);
 
+    // Reset mobile page on filter/search changes
+    useEffect(() => {
+        setMobilePage(1);
+    }, [searchQuery, filterDivisi, filterStatus]);
+
+    // Mobile pagination
+    const mobileTotalPages = Math.ceil(filteredKaryawans.length / mobilePerPage);
+    const mobileStart = (mobilePage - 1) * mobilePerPage;
+    const mobileKaryawans = filteredKaryawans.slice(mobileStart, mobileStart + mobilePerPage);
+
     const handleAddSubmit = (e) => {
         e.preventDefault();
         setAddError('');
@@ -106,6 +121,7 @@ export default function Karyawan({ karyawans = [], flash = {} }) {
             jabatan: addJabatan,
         }, {
             onSuccess: () => {
+                alertSuccess('Karyawan berhasil ditambahkan.');
                 setIsAddModalOpen(false);
                 setAddFid('');
                 setAddNama('');
@@ -141,6 +157,7 @@ export default function Karyawan({ karyawans = [], flash = {} }) {
             status: editStatus,
         }, {
             onSuccess: () => {
+                alertSuccess('Karyawan berhasil diperbarui.');
                 setIsEditModalOpen(false);
                 setEditingKaryawan(null);
             },
@@ -156,6 +173,7 @@ export default function Karyawan({ karyawans = [], flash = {} }) {
     return (
         <AuthenticatedLayout
             title="Kelola Karyawan"
+            subtitle="Data dan manajemen karyawan"
             searchQuery={searchQuery}
             setSearchQuery={setSearchQuery}
             filterDivisi={filterDivisi}
@@ -168,89 +186,129 @@ export default function Karyawan({ karyawans = [], flash = {} }) {
 
             {/* Flash Messages */}
             {showFlash && (
-                <div className={`fixed top-4 right-4 z-50 px-4 py-3 rounded-xl shadow-lg text-sm font-semibold transition-all duration-300 ${
-                    flashMsg.type === 'success'
+                <div className={`fixed top-4 right-4 z-50 px-4 py-3 rounded-xl shadow-lg text-sm font-semibold transition-all duration-300 ${flashMsg.type === 'success'
                         ? 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800'
                         : 'bg-rose-50 dark:bg-rose-950/50 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800'
-                }`}>
+                    }`}>
                     {flashMsg.message}
                 </div>
             )}
 
-            <div className="py-6 transition-colors duration-200">
-                {/* Karyawan Table */}
-                <div className="bg-white dark:bg-zinc-900 rounded-[24px] border border-gray-200 dark:border-zinc-800 shadow-sm overflow-hidden mt-2">
-                    {filteredKaryawans.length === 0 ? (
-                        <div className="py-16 text-center text-gray-400 dark:text-zinc-500 text-sm">
-                            {searchQuery ? 'Tidak ada karyawan yang cocok dengan pencarian Anda.' : 'Belum ada data karyawan. Klik "+ Tambah Karyawan" di kanan atas untuk memulai.'}
+            <div className="flex-1 flex flex-col min-h-0 pb-1">
+                {/* Mobile: Card list */}
+                <div className="md:hidden space-y-3 pb-20">
+                    {mobileKaryawans.length === 0 ? (
+                        <div className="py-16 text-center text-sm text-gray-400 dark:text-zinc-500">
+                            {searchQuery ? 'Tidak ada karyawan yang cocok dengan pencarian Anda.' : 'Belum ada data karyawan.'}
                         </div>
-                    ) : (
-                        <div className="overflow-x-auto">
-                            <table className="w-full text-left border-collapse">
-                                <thead>
-                                    <tr className="border-b border-gray-200 dark:border-zinc-800 bg-gray-50 dark:bg-zinc-900/50">
-                                        <th className="px-6 py-4 text-xs font-extrabold text-gray-400 dark:text-zinc-500 uppercase tracking-wider w-[60px]">No</th>
-                                        <th className="px-6 py-4 text-xs font-extrabold text-gray-400 dark:text-zinc-500 uppercase tracking-wider">FID</th>
-                                        <th className="px-6 py-4 text-xs font-extrabold text-gray-400 dark:text-zinc-500 uppercase tracking-wider">Nama Karyawan</th>
-                                        <th className="px-6 py-4 text-xs font-extrabold text-gray-400 dark:text-zinc-500 uppercase tracking-wider">Divisi</th>
-                                        <th className="px-6 py-4 text-xs font-extrabold text-gray-400 dark:text-zinc-500 uppercase tracking-wider">Jabatan</th>
-                                        <th className="px-6 py-4 text-xs font-extrabold text-gray-400 dark:text-zinc-500 uppercase tracking-wider">Status</th>
-                                        <th className="px-6 py-4 text-xs font-extrabold text-gray-400 dark:text-zinc-500 uppercase tracking-wider text-right">Aksi</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-gray-100 dark:divide-zinc-800/65">
-                                    {filteredKaryawans.map((karyawan, index) => (
-                                        <tr key={karyawan.fid} className="hover:bg-gray-50/55 dark:hover:bg-zinc-800/30 transition duration-150">
-                                            <td className="px-6 py-4">
-                                                <span className="text-xs font-bold text-gray-400 dark:text-zinc-500">{index + 1}</span>
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                <span className="text-xs font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/30 px-2 py-0.5 rounded-md">{karyawan.fid}</span>
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                <span className="text-sm font-bold text-gray-900 dark:text-white">{karyawan.nama_karyawan}</span>
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                <span className="text-sm text-gray-600 dark:text-zinc-400">{karyawan.divisi || '-'}</span>
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                <span className="text-sm text-gray-600 dark:text-zinc-400">{karyawan.jabatan || '-'}</span>
-                                            </td>
-                                            <td className="px-6 py-4">
-                                                <span className={`text-xs font-bold px-2.5 py-1 rounded-lg ${
-                                                    karyawan.status === 'Active'
-                                                        ? 'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400'
-                                                        : 'bg-gray-100 dark:bg-zinc-800 text-gray-500 dark:text-zinc-400'
-                                                }`}>
-                                                    {karyawan.status || 'Active'}
-                                                </span>
-                                            </td>
-                                            <td className="px-6 py-4 text-right">
-                                                <div className="flex items-center justify-end">
-                                                    <button
-                                                        onClick={() => openEditModal(karyawan)}
-                                                        className="p-1.5 rounded-lg hover:bg-amber-50 dark:hover:bg-amber-950/20 text-amber-500 hover:text-amber-600 transition cursor-pointer"
-                                                        title="Ubah Data"
-                                                    >
-                                                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
-                                                            <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125" />
-                                                        </svg>
-                                                    </button>
-                                                </div>
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-                    )}
+                    ) : mobileKaryawans.map(k => {
+                        const isActive = (k.status || 'Active') === 'Active';
+                        return (
+                            <div key={k.fid} className="bg-white dark:bg-zinc-900 rounded-xl border border-gray-200 dark:border-zinc-800 p-4 shadow-sm">
+                                {/* Header: Nama + Status */}
+                                <div className="flex items-start justify-between gap-2 mb-2">
+                                    <div className="min-w-0 flex-1">
+                                        <p className="text-sm font-bold text-gray-900 dark:text-white truncate">{k.nama_karyawan}</p>
+                                        <span className="inline-block text-[10px] font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/30 px-2 py-0.5 rounded-md mt-1">{k.fid}</span>
+                                    </div>
+                                    <span className={`text-[10px] font-bold px-2 py-0.5 rounded-lg shrink-0 ${isActive ? 'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400' : 'bg-gray-100 dark:bg-zinc-800 text-gray-500 dark:text-zinc-400'}`}>
+                                        {k.status || 'Active'}
+                                    </span>
+                                </div>
+
+                                {/* Info */}
+                                <div className="space-y-1 mb-3">
+                                    <p className="text-xs text-gray-600 dark:text-zinc-400">
+                                        <span className="font-semibold text-gray-700 dark:text-zinc-300">Divisi:</span> {k.divisi || '-'}
+                                    </p>
+                                    <p className="text-xs text-gray-600 dark:text-zinc-400">
+                                        <span className="font-semibold text-gray-700 dark:text-zinc-300">Jabatan:</span> {k.jabatan || '-'}
+                                    </p>
+                                </div>
+
+                                {/* Edit button */}
+                                <div className="flex justify-end gap-2 pt-2 border-t border-gray-100 dark:border-zinc-800">
+                                    <button
+                                        onClick={() => openEditModal(k)}
+                                        title="Edit"
+                                        className="p-2.5 rounded-lg bg-amber-50 dark:bg-amber-950/20 text-amber-600 dark:text-amber-400 hover:bg-amber-100 dark:hover:bg-amber-950/40 transition cursor-pointer"
+                                    >
+                                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                                            <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125" />
+                                        </svg>
+                                    </button>
+                                </div>
+                            </div>
+                        );
+                    })}
+
+                    <MobilePagination currentPage={mobilePage} totalPages={mobileTotalPages} onPageChange={setMobilePage} />
+                </div>
+
+                {/* Desktop: DataTable — TIDAK DIUBAH */}
+                <div className="hidden md:block bg-white dark:bg-zinc-900 rounded-2xl border border-gray-200 dark:border-zinc-800 shadow-sm overflow-auto flex-1 flex flex-col min-h-0">
+                    <DataTable
+                        data={filteredKaryawans}
+                        keyField="fid"
+                        columns={[
+                            { key: 'no', label: 'No', className: 'w-12', render: (_, i) => i + 1 },
+                            {
+                                key: 'fid',
+                                label: 'FID',
+                                className: 'whitespace-nowrap',
+                                render: (row) => (
+                                    <span className="text-xs font-bold text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-950/30 px-2 py-0.5 rounded-md">{row.fid}</span>
+                                )
+                            },
+                            { key: 'nama_karyawan', label: 'Nama Karyawan', className: 'min-w-0', tdClassName: 'font-bold text-sm truncate dark:text-zinc-300' },
+                            { key: 'divisi', label: 'Divisi', className: 'min-w-0', render: (row) => <span className="text-sm text-gray-600 dark:text-zinc-400 truncate block">{row.divisi || '-'}</span> },
+                            { key: 'jabatan', label: 'Jabatan', className: 'min-w-0', render: (row) => <span className="text-sm text-gray-600 dark:text-zinc-400 truncate block">{row.jabatan || '-'}</span> },
+                            {
+                                key: 'status',
+                                label: 'Status',
+                                className: 'whitespace-nowrap',
+                                render: (row) => {
+                                    const isActive = (row.status || 'Active') === 'Active';
+                                    return (
+                                        <span className={`text-xs font-bold px-2.5 py-1 rounded-lg ${isActive ? 'bg-emerald-50 dark:bg-emerald-950/30 text-emerald-600 dark:text-emerald-400' : 'bg-gray-100 dark:bg-zinc-800 text-gray-500 dark:text-zinc-400'}`}>
+                                            {row.status || 'Active'}
+                                        </span>
+                                    );
+                                }
+                            },
+                            {
+                                key: 'aksi',
+                                label: 'Aksi',
+                                className: 'whitespace-nowrap',
+                                tdClassName: 'text-right',
+                                render: (row) => (
+                                    <div className="flex items-center justify-end">
+                                        <button
+                                            onClick={() => openEditModal(row)}
+                                            className="p-1.5 rounded-lg hover:bg-amber-50 dark:hover:bg-amber-950/20 text-amber-500 dark:text-amber-400 hover:text-amber-600 transition cursor-pointer"
+                                            title="Ubah Data"
+                                        >
+                                            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
+                                                <path strokeLinecap="round" strokeLinejoin="round" d="M16.862 4.487l1.687-1.688a1.875 1.875 0 112.652 2.652L6.832 19.82a4.5 4.5 0 01-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 011.13-1.897L16.863 4.487zm0 0L19.5 7.125" />
+                                            </svg>
+                                        </button>
+                                    </div>
+                                )
+                            },
+                        ]}
+                        emptyState={
+                            <div className="py-16 text-center text-gray-400 dark:text-zinc-500 text-sm">
+                                {searchQuery ? 'Tidak ada karyawan yang cocok dengan pencarian Anda.' : 'Belum ada data karyawan. Klik "+ Tambah Karyawan" di kanan atas untuk memulai.'}
+                            </div>
+                        }
+                    />
                 </div>
             </div>
 
             {/* Add Karyawan Modal */}
             <Modal show={isAddModalOpen} onClose={() => setIsAddModalOpen(false)} maxWidth="md">
                 <div className="p-6 md:p-8">
-                    <div className="flex justify-between items-center mb-5 pb-4 border-b border-gray-150 dark:border-zinc-800">
+                    <div className="flex justify-between items-center mb-5 pb-4 border-b border-gray-200 dark:border-zinc-800">
                         <h3 className="text-lg font-extrabold text-gray-900 dark:text-white">Tambah Karyawan Baru</h3>
                         <button
                             onClick={() => setIsAddModalOpen(false)}
@@ -308,7 +366,7 @@ export default function Karyawan({ karyawans = [], flash = {} }) {
                         </div>
 
                         {addError && (
-                            <p className="text-xs text-rose-500 font-semibold flex items-center gap-1.5 pt-1">
+                            <p className="text-xs text-rose-500 dark:text-rose-400 font-semibold flex items-center gap-1.5 pt-1">
                                 <svg className="w-3.5 h-3.5 shrink-0" fill="currentColor" viewBox="0 0 20 20">
                                     <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                                 </svg>
@@ -316,11 +374,11 @@ export default function Karyawan({ karyawans = [], flash = {} }) {
                             </p>
                         )}
 
-                        <div className="flex justify-end gap-2.5 pt-4 border-t border-gray-150 dark:border-zinc-800">
+                        <div className="flex justify-end gap-2.5 pt-4 border-t border-gray-200 dark:border-zinc-800">
                             <button
                                 type="button"
                                 onClick={() => setIsAddModalOpen(false)}
-                                className="bg-gray-100 hover:bg-gray-200 dark:bg-zinc-800 dark:hover:bg-zinc-750 text-gray-700 dark:text-zinc-300 font-bold py-2.5 px-5 rounded-xl text-xs transition cursor-pointer"
+                                className="bg-gray-100 hover:bg-gray-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-gray-700 dark:text-zinc-300 font-bold py-2.5 px-5 rounded-xl text-xs transition cursor-pointer"
                             >
                                 Batal
                             </button>
@@ -339,7 +397,7 @@ export default function Karyawan({ karyawans = [], flash = {} }) {
             {/* Edit Karyawan Modal */}
             <Modal show={isEditModalOpen} onClose={() => setIsEditModalOpen(false)} maxWidth="md">
                 <div className="p-6 md:p-8">
-                    <div className="flex justify-between items-center mb-5 pb-4 border-b border-gray-150 dark:border-zinc-800">
+                    <div className="flex justify-between items-center mb-5 pb-4 border-b border-gray-200 dark:border-zinc-800">
                         <div>
                             <h3 className="text-lg font-extrabold text-gray-900 dark:text-white">Ubah Data Karyawan</h3>
                             {editingKaryawan && (
@@ -366,7 +424,7 @@ export default function Karyawan({ karyawans = [], flash = {} }) {
                                 className={inputClass}
                             />
                         </div>
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                             <div>
                                 <label className="block text-[10px] font-bold text-gray-600 dark:text-zinc-300 uppercase tracking-wider mb-1.5">Divisi</label>
                                 <input
@@ -399,7 +457,7 @@ export default function Karyawan({ karyawans = [], flash = {} }) {
                         </div>
 
                         {editError && (
-                            <p className="text-xs text-rose-500 font-semibold flex items-center gap-1.5 pt-1">
+                            <p className="text-xs text-rose-500 dark:text-rose-400 font-semibold flex items-center gap-1.5 pt-1">
                                 <svg className="w-3.5 h-3.5 shrink-0" fill="currentColor" viewBox="0 0 20 20">
                                     <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
                                 </svg>
@@ -407,11 +465,11 @@ export default function Karyawan({ karyawans = [], flash = {} }) {
                             </p>
                         )}
 
-                        <div className="flex justify-end gap-2.5 pt-4 border-t border-gray-150 dark:border-zinc-800">
+                        <div className="flex justify-end gap-2.5 pt-4 border-t border-gray-200 dark:border-zinc-800">
                             <button
                                 type="button"
                                 onClick={() => setIsEditModalOpen(false)}
-                                className="bg-gray-100 hover:bg-gray-200 dark:bg-zinc-800 dark:hover:bg-zinc-750 text-gray-700 dark:text-zinc-300 font-bold py-2.5 px-5 rounded-xl text-xs transition cursor-pointer"
+                                className="bg-gray-100 hover:bg-gray-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-gray-700 dark:text-zinc-300 font-bold py-2.5 px-5 rounded-xl text-xs transition cursor-pointer"
                             >
                                 Batal
                             </button>
