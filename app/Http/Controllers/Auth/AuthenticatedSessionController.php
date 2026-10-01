@@ -5,8 +5,6 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\Auth\LoginRequest;
 use App\Models\Application;
-use App\Models\LogNotifikasi;
-use App\Models\User;
 use App\Models\UserApplication;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -31,60 +29,37 @@ class AuthenticatedSessionController extends Controller
 
         $user = Auth::user();
 
-        // IT (level 1) bypass workflow access check
-        if (!$user->isIT('it-workflow')) {
-            $app = Application::firstOrCreate(
-                ['slug' => 'it-workflow'],
-                ['name' => 'IT Workflow', 'description' => 'Sistem manajemen workflow teknologi informasi.']
-            );
+        // Aturan seragam lintas aplikasi: TANPA bypass admin — semua akun
+        // (termasuk admin) harus punya baris it-workflow AKTIF untuk masuk.
+        // Aktivasi hanya via Kelola Permintaan di it-system.
+        $app = Application::firstOrCreate(
+            ['slug' => 'it-workflow'],
+            ['name' => 'IT Workflow', 'description' => 'Sistem manajemen workflow teknologi informasi.']
+        );
 
-            $userApp = UserApplication::where('user_id', $user->id)
-                ->where('application_id', $app->id)
-                ->first();
+        $userApp = UserApplication::where('user_id', $user->id)
+            ->where('application_id', $app->id)
+            ->first();
 
-            if (!$userApp) {
-                // Auto-Request: Jika belum ada entri, buat entri baru dengan is_active = false
-                $userApp = UserApplication::create([
-                    'user_id' => $user->id,
-                    'application_id' => $app->id,
-                    'role_id' => $user->role_id,
-                    'is_active' => false,
-                ]);
+        if (!$userApp) {
+            // Baris belum ada (akun lama) → buat inactive + notifikasi admin.
+            UserApplication::create([
+                'user_id' => $user->id,
+                'application_id' => $app->id,
+                'role_id' => $user->role_id,
+                'is_active' => false,
+            ]);
+            $user->sendAccessRequestNotifications();
+        }
 
-                // Create notification for admin (IT users via users.role_id → roles.level)
-                $adminUsers = User::whereHas('role', fn($q) => $q->where('level', 1))->get();
-                $adminUsers->each(function ($admin) use ($user) {
-                    LogNotifikasi::create([
-                        'user_id' => $admin->id,
-                        'ticket_id' => null,
-                        'actor_user_id' => $user->id,
-                        'actor_name' => $user->name,
-                        'recipient_type' => 'admin',
-                        'action' => 'activation_required',
-                        'title' => 'Percobaan login oleh user non-aktif',
-                        'message' => $user->name . ' (' . $user->username . ') mencoba masuk namun akun belum diaktifkan untuk aplikasi IT Workflow.',
-                        'status' => null,
-                        'visible_in_bell' => true,
-                    ]);
-                });
+        if (!$userApp || !$userApp->is_active) {
+            Auth::guard('web')->logout();
+            $request->session()->invalidate();
+            $request->session()->regenerateToken();
 
-                Auth::guard('web')->logout();
-                $request->session()->invalidate();
-                $request->session()->regenerateToken();
-
-                throw \Illuminate\Validation\ValidationException::withMessages([
-                    'activation_needed' => 'Request ke IT Workflow telah diajukan secara otomatis.',
-                ]);
-            } elseif (!$userApp->is_active) {
-                // Akses masih ditangguhkan (Pending)
-                Auth::guard('web')->logout();
-                $request->session()->invalidate();
-                $request->session()->regenerateToken();
-
-                throw \Illuminate\Validation\ValidationException::withMessages([
-                    'activation_needed' => 'Akses Anda ke Sistem IT masih dinonaktifkan. Hubungi Team IT untuk diaktifkan.',
-                ]);
-            }
+            throw \Illuminate\Validation\ValidationException::withMessages([
+                'activation_needed' => 'Akun belum diaktifkan. Hubungi tim IT',
+            ]);
         }
 
         $request->session()->regenerate();

@@ -139,6 +139,37 @@ class User extends Authenticatable
         );
     }
 
+    public function accessRequestNotificationCount(): int
+    {
+        return LogNotifikasi::where('actor_user_id', $this->id)
+            ->where('action', 'new_access_request')
+            ->count();
+    }
+
+    /**
+     * Beri tahu semua pemegang hak akses Kelola Permintaan (level 1,2,3,4,7)
+     * bahwa ada permintaan akses baru. Aturan seragam lintas aplikasi.
+     */
+    public function sendAccessRequestNotifications(): void
+    {
+        User::whereHas('role', fn ($q) => $q->whereIn('level', [1, 2, 3, 4, 7]))
+            ->get()
+            ->each(function ($admin) {
+                LogNotifikasi::create([
+                    'user_id' => $admin->id,
+                    'ticket_id' => null,
+                    'actor_user_id' => $this->id,
+                    'actor_name' => $this->name,
+                    'recipient_type' => 'admin',
+                    'action' => 'new_access_request',
+                    'title' => 'Permintaan akses baru',
+                    'message' => $this->name . ' (' . $this->username . ') mengajukan akses ke "IT Workflow".',
+                    'status' => null,
+                    'visible_in_bell' => true,
+                ]);
+            });
+    }
+
     public function logNotifikasi(): HasMany
     {
         return $this->hasMany(LogNotifikasi::class);

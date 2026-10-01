@@ -71,10 +71,12 @@ class HandleInertiaRequests extends Middleware
             $userData['is_it']     = $user->isIT();
             $userData['can_manage_master']     = $user->canManageMaster();
             $userData['can_see_global_monitor'] = $user->canSeeGlobalMonitor();
-            $userData['has_it_workflow_access'] = $user->canManageMaster()
-                || $user->userApplications->contains(fn($ua) =>
-                    $ua->application?->slug === 'it-workflow' && $ua->is_active
-                );
+            // Aturan seragam: akses = baris it-workflow aktif saja
+            // (tanpa bypass admin — admin pun harus diaktifkan via
+            // Kelola Permintaan sebelum bisa masuk).
+            $userData['has_it_workflow_access'] = $user->userApplications->contains(fn($ua) =>
+                $ua->application?->slug === 'it-workflow' && $ua->is_active
+            );
             $userData['avatar_url'] = $user->avatar_path
                 ? asset('storage/' . $user->avatar_path)
                 : null;

@@ -7,9 +7,9 @@ Semua perintah diasumsikan sebagai **root** di server Linux.
 
 ## 0. SEKALI SAAT PERTAMA
 
-- [ ] **Push ke-3 commit ke origin** (belum di-push):
-      `c584e6f` (hardening), `2b28d93` (artefak deploy), `2d2fdb6` (keamanan kode).
-      Server tidak bisa `git pull` sebelum push dilakukan.
+- [ ] **Pastikan semua commit sudah di-push** — server tidak bisa `git pull`
+      sebelum push dilakukan. Cek dari repo lokal: `git log origin/main..main`
+      (harus kosong; bila ada, push dulu `git push origin main`).
 - [ ] Prasyarat terpasang di server:
       `php8.3` + `php8.3-fpm`, `composer`, `node`+`npm`, `mysql-client`,
       `supervisor`, `nginx`.
@@ -102,11 +102,13 @@ DB::table('migrations')->count();                         // 37 (= jumlah file m
       Buka tiket orang lain (akun lain) → **403** (uji IDOR: endpoint
       `/api/tickets/{id}` & `/api/tickets/{id}/timeline`).
 - [ ] **Registrasi & login**: daftar akun baru (nama = nama karyawan yang cocok)
-      → role `Menunggu Persetujuan` (bukan langsung IT/HRD), **belum ada baris
-      akses** → klik Masuk → modal *"Request ke IT Workflow telah diajukan
-      secara otomatis"* + **tepat 1 baris** `user_applications`
-      (it-workflow, inactive) muncul di **Kelola Permintaan** (bukan 4) →
-      approve → role otomatis sesuai divisi → Login kedua → dashboard.
+      → role `Menunggu Persetujuan` (bukan langsung IT/HRD) + **tepat 1 baris**
+      `user_applications` (it-workflow, inactive) + notifikasi **"Permintaan
+      akses baru"** ke lonceng level 1,2,3,4,7 — baris muncul di **Kelola
+      Permintaan** saat itu juga (bukan setelah login, bukan 4) → klik Masuk →
+      modal **"Akun belum diaktifkan. Hubungi tim IT"** (tanpa bypass — akun
+      admin level 1 pun diblokir bila barisnya belum aktif) → approve →
+      role otomatis sesuai divisi → Login kedua → dashboard.
 - [ ] **Lupa password**: email tak dikenal & email valid → pesan yang
       **sama** (tidak ada error "user tidak ditemukan").
 - [ ] `GET /it-system` tanpa slash → 301 → `/it-system/`.

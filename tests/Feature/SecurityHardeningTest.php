@@ -28,17 +28,19 @@ class SecurityHardeningTest extends TestCase
         ]);
     }
 
-    public function test_register_assigns_pending_role_instead_of_divisi_role(): void
+    public function test_register_assigns_pending_role_and_creates_access_request(): void
     {
         // Nama cocok dengan karyawan ber-divisi IT — perilaku lama akan
         // langsung memberi role IT. Perilaku baru: role "Menunggu Persetujuan"
-        // dan BELUM ada baris permintaan akses (dibuat saat login pertama).
+        // + tepat 1 baris permintaan akses (inactive) + notifikasi admin.
         Karyawan::create([
             'fid' => 'F1001',
             'nama_karyawan' => 'Budi Santoso',
             'divisi' => 'IT',
             'status' => 'Active',
         ]);
+
+        $it = User::factory()->role('IT')->create();
 
         $this->post('/register', [
             'name' => 'Budi Santoso',
@@ -52,12 +54,23 @@ class SecurityHardeningTest extends TestCase
         $pendingId = Role::where('name', 'Menunggu Persetujuan')->value('id');
 
         $this->assertSame($pendingId, $user->role_id);
-        // Registrasi TIDAK membuat baris akses — sistem lain (Meeting/
-        // Reminder/Shortly) tidak ikut; auto-request hanya saat login.
-        $this->assertSame(0, $user->userApplications()->count());
+
+        // Aturan seragam: registrasi membuat tepat 1 baris it-workflow
+        // (inactive) + notifikasi "Permintaan akses baru" ke level 1,2,3,4,7.
+        $this->assertSame(1, $user->userApplications()->count());
+        $userApp = $user->userApplications()->first();
+        $this->assertSame('it-workflow', $userApp->application->slug);
+        $this->assertFalse((bool) $userApp->is_active);
+
+        $this->assertDatabaseHas('log_notifikasi', [
+            'actor_user_id' => $user->id,
+            'user_id' => $it->id,
+            'action' => 'new_access_request',
+            'title' => 'Permintaan akses baru',
+        ]);
     }
 
-    public function test_first_login_auto_creates_single_it_workflow_request(): void
+    public function test_login_is_blocked_until_activation_without_bypass(): void
     {
         Karyawan::create([
             'fid' => 'F1010',
@@ -76,37 +89,71 @@ class SecurityHardeningTest extends TestCase
             'password_confirmation' => 'password',
         ])->assertRedirect('/login');
 
-        // Login pertama → gate membuat TEPAT 1 baris it-workflow (inactive),
-        // memberi notifikasi ke IT, membatalkan sesi, dan menampilkan pesan.
+        // Baris sudah dibuat saat registrasi → login pertama langsung
+        // DIBLOKIR dengan pesan seragam (tanpa bypass admin).
         $response = $this->post('/login', [
             'username' => 'sari.pending',
             'password' => 'password',
         ]);
 
         $response->assertSessionHasErrors('activation_needed');
+        $response->assertSessionHas('errors');
+        $this->assertSame(
+            'Akun belum diaktifkan. Hubungi tim IT',
+            session('errors')->first('activation_needed')
+        );
+        $this->assertGuest();
 
         $user = User::where('email', 'sari@example.com')->firstOrFail();
 
+        // Tetap tepat 1 baris, tidak ada duplikasi saat login berulang.
         $this->assertSame(1, $user->userApplications()->count());
         $userApp = $user->userApplications()->first();
-        $this->assertSame('it-workflow', $userApp->application->slug);
         $this->assertFalse((bool) $userApp->is_active);
         $this->assertSame($user->role_id, $userApp->role_id);
 
-        // Notifikasi "percobaan login user non-aktif" terkirim ke IT level 1.
+        // Tidak ada notifikasi ganda (baris sudah ada → gate tidak create).
+        $this->assertSame(1, $user->accessRequestNotificationCount());
         $this->assertDatabaseHas('log_notifikasi', [
             'actor_user_id' => $user->id,
-            'action' => 'activation_required',
+            'action' => 'new_access_request',
             'user_id' => $it->id,
         ]);
 
-        // Login kedua (row sudah ada, masih inactive) → pesan kedua, tetap 1 row.
+        // Login kedua → tetap diblokir, tetap 1 row, tetap 1 notifikasi.
         $this->post('/login', [
             'username' => 'sari.pending',
             'password' => 'password',
         ])->assertSessionHasErrors('activation_needed');
 
         $this->assertSame(1, $user->userApplications()->count());
+        $this->assertSame(1, $user->accessRequestNotificationCount());
+    }
+
+    public function test_admin_without_active_row_cannot_login(): void
+    {
+        // Aturan seragam: SEMUA akun diblokir, termasuk admin (level 1).
+        $admin = User::factory()->role('IT')->create();
+        // Factory role() memberi baris aktif semua app — hapus dulu untuk
+        // mensimulasikan admin yang barisnya belum/bisa dinonaktifkan.
+        $admin->userApplications()->delete();
+
+        $this->post('/login', [
+            'username' => $admin->username,
+            'password' => 'password',
+        ])->assertSessionHasErrors('activation_needed');
+        $this->assertGuest();
+        $this->assertSame(1, $admin->userApplications()->count());
+        $this->assertFalse((bool) $admin->userApplications()->first()->is_active);
+
+        // Setelah baris diaktifkan via Kelola Permintaan → baru bisa masuk.
+        $admin->userApplications()->update(['is_active' => true]);
+
+        $this->post('/login', [
+            'username' => $admin->username,
+            'password' => 'password',
+        ])->assertRedirect();
+        $this->assertAuthenticatedAs($admin);
     }
 
     public function test_approval_assigns_role_from_karyawan_divisi(): void

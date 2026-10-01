@@ -16,12 +16,8 @@ class CheckITWorkflowAccess
             abort(401, 'Unauthenticated.');
         }
 
-        // Master-data managers (levels 1, 2, 3, 4, 7) always have access
-        if ($user->canManageMaster('it-workflow')) {
-            return $next($request);
-        }
-
-        // Cek akses aktif ke it-workflow via user_applications
+        // Aturan seragam lintas aplikasi: TANPA bypass admin — hanya baris
+        // it-workflow dengan is_active=true yang diizinkan.
         $hasAccess = $user->userApplications()
             ->whereHas('application', function ($query) {
                 $query->where('slug', 'it-workflow');
@@ -32,11 +28,11 @@ class CheckITWorkflowAccess
         if (!$hasAccess) {
             if ($request->expectsJson() || $request->header('X-Inertia')) {
                 return response()->json([
-                    'message' => 'Anda tidak memiliki akses aktif ke aplikasi IT Workflow.'
+                    'message' => 'Akun belum diaktifkan. Hubungi tim IT'
                 ], 403);
             }
 
-            abort(403, 'Anda tidak memiliki akses aktif ke aplikasi IT Workflow. Hubungi Team IT untuk diaktifkan.');
+            abort(403, 'Akun belum diaktifkan. Hubungi tim IT');
         }
 
         return $next($request);
