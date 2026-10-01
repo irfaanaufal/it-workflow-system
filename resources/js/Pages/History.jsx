@@ -177,19 +177,20 @@ export default function History({ tickets }) {
                 <div className="hidden md:block bg-white dark:bg-zinc-900 rounded-2xl border border-gray-200 dark:border-zinc-800 shadow-sm overflow-auto flex-1 flex flex-col min-h-0">
                     <DataTable
                         data={filteredTickets}
+                        tableClassName="table-fixed"
                         columns={[
-                            { key: 'no', label: 'No', className: 'w-12 dark:text-zinc-300', render: (_, i) => i + 1 },
-                            { key: 'nama', label: 'Nama Pelapor', className: 'min-w-0', tdClassName: 'font-bold text-sm truncate dark:text-zinc-300', render: (row) => <span className="truncate block dark:text-zinc-300">{row.karyawan?.nama_karyawan || '-'}</span> },
-                            { key: 'divisi', label: 'Divisi', className: 'min-w-0', render: (row) => <span className="text-sm text-gray-600 dark:text-zinc-400 truncate block">{row.karyawan?.divisi || '-'}</span> },
-                            { key: 'judul', label: 'Judul', className: 'min-w-0', tdClassName: 'font-semibold text-sm truncate dark:text-zinc-300', render: (row) => (
+                            { key: 'no', label: 'No', className: 'w-[4%] dark:text-zinc-300', render: (_, i) => i + 1 },
+                            { key: 'nama', label: 'Nama Pelapor', className: 'w-[14%]', tdClassName: 'font-bold text-sm truncate dark:text-zinc-300', render: (row) => <span className="truncate block dark:text-zinc-300" title={row.karyawan?.nama_karyawan || '-'}>{row.karyawan?.nama_karyawan || '-'}</span> },
+                            { key: 'divisi', label: 'Divisi', className: 'w-[11%]', render: (row) => <span className="text-sm text-gray-600 dark:text-zinc-400 truncate block" title={row.karyawan?.divisi || '-'}>{row.karyawan?.divisi || '-'}</span> },
+                            { key: 'judul', label: 'Judul', className: 'w-[24%]', tdClassName: 'font-semibold text-sm truncate dark:text-zinc-300', render: (row) => (
                                 <span className="truncate block dark:text-zinc-300" title={row.judul_laporan}>{row.judul_laporan}</span>
                             )},
-                            { key: 'kategori', label: 'Kategori', className: 'whitespace-nowrap', render: (row) => (
+                            { key: 'kategori', label: 'Kategori', className: 'w-[11%] whitespace-nowrap', render: (row) => (
                                 <span className={`text-xs font-bold px-2 py-1 rounded-lg ${getCategoryStyles(row.kategori_laporan)}`}>
                                     {row.kategori_laporan}
                                 </span>
                             )},
-                            { key: 'status', label: 'Status', className: 'whitespace-nowrap', render: (row) => {
+                            { key: 'status', label: 'Status', className: 'w-[16%] whitespace-nowrap', render: (row) => {
                                 return (
                                     <div>
                                         <span className={`text-xs font-bold px-2.5 py-1 rounded-lg text-white ${STATUS_COLORS[row.status] || 'bg-gray-200 dark:bg-zinc-700 text-gray-800 dark:text-zinc-200'}`}>
@@ -203,12 +204,12 @@ export default function History({ tickets }) {
                                     </div>
                                 );
                             }},
-                            { key: 'tanggal', label: 'Tanggal', className: 'whitespace-nowrap', render: (row) => (
+                            { key: 'tanggal', label: 'Tanggal', className: 'w-[11%] whitespace-nowrap', render: (row) => (
                                 <span className="text-xs text-gray-600 dark:text-zinc-400 whitespace-nowrap">
                                     {row.created_at ? new Date(row.created_at).toLocaleDateString('id-ID', { day: 'numeric', month: 'short', year: 'numeric' }) : '-'}
                                 </span>
                             )},
-                            { key: 'aksi', label: 'Aksi', className: 'whitespace-nowrap', tdClassName: 'text-right', render: (row) => (
+                            { key: 'aksi', label: 'Aksi', className: 'w-[9%] whitespace-nowrap', tdClassName: 'text-right', render: (row) => (
                                 <Link href={route('tickets.detail', row.id)} className="text-xs font-bold text-gray-500 dark:text-zinc-400 hover:text-gray-800 dark:hover:text-zinc-200 underline underline-offset-4">
                                     Detail
                                 </Link>

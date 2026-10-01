@@ -162,15 +162,16 @@ export default function Requests({ allRequests = [] }) {
                 <div className="hidden md:block bg-white dark:bg-zinc-900 rounded-2xl border border-gray-200 dark:border-zinc-800 shadow-sm overflow-auto flex-1 flex flex-col min-h-0">
                     <DataTable
                         data={filteredRequests}
+                        tableClassName="table-fixed"
                         columns={[
-                            { key: 'no', label: 'No', className: 'w-12', render: (_, i) => i + 1 },
+                            { key: 'no', label: 'No', className: 'w-[7%]', render: (_, i) => i + 1 },
                             {
                                 key: 'user',
                                 label: 'Nama User',
-                                className: 'min-w-0',
+                                className: 'w-[12%]',
                                 tdClassName: 'font-bold text-sm truncate',
                                 render: (row) => (
-                                    <span className="font-bold text-sm text-gray-900 dark:text-white truncate block">
+                                    <span className="font-bold text-sm text-gray-900 dark:text-white truncate block" title={row.user?.name || '-'}>
                                         {row.user?.name || '-'}
                                     </span>
                                 )
@@ -178,9 +179,9 @@ export default function Requests({ allRequests = [] }) {
                             {
                                 key: 'divisi',
                                 label: 'Divisi',
-                                className: 'min-w-0',
+                                className: 'w-[9%]',
                                 render: (row) => (
-                                    <span className="text-sm text-gray-600 dark:text-zinc-400 truncate block">
+                                    <span className="text-sm text-gray-600 dark:text-zinc-400 truncate block" title={row.user?.karyawan?.divisi || '-'}>
                                         {row.user?.karyawan?.divisi || '-'}
                                     </span>
                                 )
@@ -188,9 +189,9 @@ export default function Requests({ allRequests = [] }) {
                             {
                                 key: 'email',
                                 label: 'Email',
-                                className: 'min-w-0',
+                                className: 'w-[13%]',
                                 render: (row) => (
-                                    <span className="text-sm text-gray-600 dark:text-zinc-400 truncate block">
+                                    <span className="text-sm text-gray-600 dark:text-zinc-400 truncate block" title={row.user?.email || '-'}>
                                         {row.user?.email || '-'}
                                     </span>
                                 )
@@ -198,9 +199,9 @@ export default function Requests({ allRequests = [] }) {
                             {
                                 key: 'app',
                                 label: 'Aplikasi',
-                                className: 'min-w-0',
+                                className: 'w-[11%]',
                                 render: (row) => (
-                                    <span className="text-sm font-semibold text-gray-800 dark:text-zinc-200 truncate block">
+                                    <span className="text-sm font-semibold text-gray-800 dark:text-zinc-200 truncate block" title={row.application?.name || '-'}>
                                         {row.application?.name || '-'}
                                     </span>
                                 )
@@ -208,7 +209,7 @@ export default function Requests({ allRequests = [] }) {
                             {
                                 key: 'date',
                                 label: 'Tgl Pengajuan',
-                                className: 'whitespace-nowrap',
+                                className: 'w-[12%] whitespace-nowrap',
                                 render: (row) => (
                                     <span className="text-sm text-gray-600 dark:text-zinc-400 whitespace-nowrap">
                                         {row.created_at ? new Date(row.created_at).toLocaleDateString('id-ID', {
@@ -222,7 +223,7 @@ export default function Requests({ allRequests = [] }) {
                             {
                                 key: 'status',
                                 label: 'Status',
-                                className: 'whitespace-nowrap',
+                                className: 'w-[12%] whitespace-nowrap',
                                 render: (row) => {
                                     const isPending = !row.is_active;
                                     return (
@@ -239,9 +240,9 @@ export default function Requests({ allRequests = [] }) {
                             {
                                 key: 'approver',
                                 label: 'Persetujuan',
-                                className: 'min-w-0',
+                                className: 'w-[10%]',
                                 render: (row) => (
-                                    <span className="text-sm text-gray-600 dark:text-zinc-400 truncate block">
+                                    <span className="text-sm text-gray-600 dark:text-zinc-400 truncate block" title={!row.is_active ? '-' : (row.approver?.name || '-')}>
                                         {!row.is_active ? '-' : (row.approver?.name || '-')}
                                     </span>
                                 )
@@ -249,7 +250,7 @@ export default function Requests({ allRequests = [] }) {
                             {
                                 key: 'aksi',
                                 label: 'Aksi',
-                                className: 'whitespace-nowrap',
+                                className: 'w-[14%] whitespace-nowrap',
                                 tdClassName: 'text-right',
                                 render: (row) => {
                                     const isPending = !row.is_active;

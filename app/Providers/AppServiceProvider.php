@@ -37,7 +37,7 @@ class AppServiceProvider extends ServiceProvider
             }
         }
 
-        if (str_starts_with(config('app.url'), 'https://')) {
+        if (str_starts_with(config('app.url'), 'https://') && request()->isSecure()) {
             \Illuminate\Support\Facades\URL::forceScheme('https');
         }
     }
