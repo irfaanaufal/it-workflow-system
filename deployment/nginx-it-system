@@ -7,6 +7,9 @@ server {
     listen 443 ssl http2;
     server_name sindangasih-makmur.com;
 
+    # Batas upload lampiran (default nginx 1m terlalu kecil)
+    client_max_body_size 12m;
+
     root /var/www/it-system/public;
     index index.php index.html;
 
@@ -21,6 +24,11 @@ server {
     add_header X-Content-Type-Options "nosniff" always;
     add_header Referrer-Policy "strict-origin-when-cross-origin" always;
     add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+
+    # Redirect /it-system (tanpa slash) → /it-system/
+    location = /it-system {
+        return 301 /it-system/;
+    }
 
     # Laravel routing — subdirectory /it-system/
     location /it-system/ {
@@ -46,8 +54,11 @@ server {
         add_header Cache-Control "public, immutable";
     }
 
-    # Deny access to storage
-    location ~ ^/it-system/storage {
+    # Tolak eksekusi PHP di luar index.php.
+    # (storage/ dibuka agar lampiran & avatar terlayani dari disk public;
+    # blok ini menjamin file .php di dalamnya tidak pernah dieksekusi.
+    # Urutan penting: location index.php di atas menang lebih dulu.)
+    location ~ \.php$ {
         deny all;
     }
 }
