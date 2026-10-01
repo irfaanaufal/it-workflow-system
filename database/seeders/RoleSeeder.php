@@ -19,6 +19,7 @@ class RoleSeeder extends Seeder
             'QA' => 7,
             'QC' => 8,
             'Ekspedisi' => 9,
+            'Menunggu Persetujuan' => 10,
         ];
 
         foreach ($roles as $name => $level) {

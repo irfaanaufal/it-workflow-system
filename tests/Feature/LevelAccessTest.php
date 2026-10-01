@@ -116,7 +116,7 @@ class LevelAccessTest extends TestCase
         $this->actingAs($user)->get('/my-requests')->assertStatus(200);
     }
 
-    public function test_roles_table_contains_exactly_the_nine_levels(): void
+    public function test_roles_table_contains_exactly_the_ten_levels(): void
     {
         $roles = Role::orderBy('level')->pluck('name', 'level')->toArray();
 
@@ -130,6 +130,7 @@ class LevelAccessTest extends TestCase
             7 => 'QA',
             8 => 'QC',
             9 => 'Ekspedisi',
+            10 => 'Menunggu Persetujuan',
         ], $roles);
     }
 

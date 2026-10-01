@@ -13,7 +13,10 @@ return Application::configure(basePath: dirname(__DIR__))
         health: '/up',
     )
     ->withMiddleware(function (Middleware $middleware): void {
-        $middleware->trustProxies(at: '*');
+        // Percayai HANYA proxy lokal (nginx/unix-socket) — '*' membuat
+        // header X-Forwarded-* dari klien langsung dipercaya sehingga
+        // rate-limit bisa dibobol lewat IP-header palsu.
+        $middleware->trustProxies(at: ['127.0.0.1', '::1']);
 
         $middleware->web(append: [
             \App\Http\Middleware\HandleInertiaRequests::class,

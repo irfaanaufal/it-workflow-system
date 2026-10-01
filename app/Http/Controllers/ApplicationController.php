@@ -132,6 +132,11 @@ class ApplicationController extends Controller
                 'approved_by' => $currentUser->id,
                 'approved_at' => now(),
             ]);
+
+            // Disetujui → tetapkan role otomatis sesuai divisi karyawan
+            // (tetap "Menunggu Persetujuan" bila divisi tidak dikenal).
+            $userApp->user?->assignRoleFromDivisi();
+
             $message = 'Akses aplikasi berhasil disetujui.';
         } else {
             $userApp->update([

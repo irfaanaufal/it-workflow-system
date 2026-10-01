@@ -22,6 +22,7 @@ abstract class TestCase extends BaseTestCase
                 ['name' => 'QA', 'level' => 7],
                 ['name' => 'QC', 'level' => 8],
                 ['name' => 'Ekspedisi', 'level' => 9],
+                ['name' => 'Menunggu Persetujuan', 'level' => 10],
             ]);
         }
     }

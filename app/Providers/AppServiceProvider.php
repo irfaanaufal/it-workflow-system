@@ -22,8 +22,19 @@ class AppServiceProvider extends ServiceProvider
     {
         Vite::prefetch(concurrency: 3);
 
+        // Host yang sah — hanya host ini yang boleh menentukan app.url,
+        // mencegah host header injection (tautan reset-password, dll).
+        $allowedHosts = [
+            'sindangasih-makmur.com',
+            'www.sindangasih-makmur.com',
+            'localhost',
+            '127.0.0.1',
+        ];
+
         if ($request = request()) {
-            config(['app.url' => $request->root()]);
+            if (in_array($request->getHost(), $allowedHosts, true)) {
+                config(['app.url' => $request->root()]);
+            }
         }
 
         if (str_starts_with(config('app.url'), 'https://')) {

@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Models\User;
 use App\Models\Karyawan;
+use App\Models\Role;
 use Illuminate\Auth\Events\Registered;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
@@ -59,15 +60,19 @@ class RegisteredUserController extends Controller
             'username' => $request->username,
             'email' => $request->email,
             'fid' => $fid,
-            'role_id' => null,
             'password' => Hash::make($request->password),
             'remember_token' => \Illuminate\Support\Str::random(10),
         ]);
 
-        // Assign role automatically based on karyawan divisi if a FID was resolved
-        if ($fid) {
-            $user->assignRoleFromDivisi();
-        }
+        // role_id tidak fillable — set eksplisit: antre sebagai
+        // "Menunggu Persetujuan" sampai disetujui di Kelola Permintaan.
+        $user->role_id = Role::where('name', 'Menunggu Persetujuan')->value('id');
+        $user->save();
+
+        // Buat baris permintaan akses (is_active=false) agar langsung muncul
+        // di Kelola Permintaan. Role sesuai divisi baru ditetapkan otomatis
+        // saat IT menyetujui lewat toggleAccess (assignRoleFromDivisi).
+        $user->ensureUserApplications();
 
         event(new Registered($user));
 

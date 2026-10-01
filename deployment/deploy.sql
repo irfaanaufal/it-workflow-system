@@ -5,9 +5,11 @@
 -- Catatan: Script ini idempotent — aman diulang
 --   - FASE 1: schema (DDL, auto-commit)
 --   - FASE 2-5: data dalam SATU transaksi (START TRANSACTION s/d COMMIT)
---   - 2 migrasi TERSEDIA di repo tapi sengaja TIDAK dicatat di FASE 5
---     (2026_08_30_000001_create_karyawans_table, 2026_08_30_000002_add_missing_indexes)
---     karena guarded & dibiarkan dijalankan `php artisan migrate --force`
+--   - 3 migrasi TERSEDIA di repo tapi sengaja TIDAK dicatat di FASE 5:
+--     * 2026_08_30_000001_create_karyawans_table
+--     * 2026_08_30_000002_add_missing_indexes
+--     * 2026_10_01_000000_add_pending_approval_role
+--     (semuanya guarded & dibiarkan dijalankan `php artisan migrate --force`)
 -- ============================================================
 
 -- ============================================================
@@ -137,7 +139,8 @@ START TRANSACTION;
 UPDATE roles SET name = CONCAT('_old_', id)
 WHERE id <= 4 AND level IS NULL AND name <> CONCAT('_old_', id);
 
--- 2b. Fase B: upsert 9 role resmi (id = level). Idempoten & aman ulang.
+-- 2b. Fase B: upsert 10 role resmi (id = level). Idempoten & aman ulang.
+--     (id=10 "Menunggu Persetujuan" = hasil registrasi yang belum disetujui)
 INSERT INTO roles (id, name, level, created_at, updated_at) VALUES
 (1, 'IT', 1, NOW(), NOW()),
 (2, 'Direktur Utama', 2, NOW(), NOW()),
@@ -147,7 +150,8 @@ INSERT INTO roles (id, name, level, created_at, updated_at) VALUES
 (6, 'Teknisi', 6, NOW(), NOW()),
 (7, 'QA', 7, NOW(), NOW()),
 (8, 'QC', 8, NOW(), NOW()),
-(9, 'Ekspedisi', 9, NOW(), NOW())
+(9, 'Ekspedisi', 9, NOW(), NOW()),
+(10, 'Menunggu Persetujuan', 10, NOW(), NOW())
 ON DUPLICATE KEY UPDATE
     name = VALUES(name),
     level = VALUES(level),

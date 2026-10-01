@@ -76,7 +76,7 @@ class HandleInertiaRequests extends Middleware
                     $ua->application?->slug === 'it-workflow' && $ua->is_active
                 );
             $userData['avatar_url'] = $user->avatar_path
-                ? asset($user->avatar_path)
+                ? asset('storage/' . $user->avatar_path)
                 : null;
         }
 

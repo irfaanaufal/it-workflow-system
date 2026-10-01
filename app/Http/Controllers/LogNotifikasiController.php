@@ -28,6 +28,13 @@ class LogNotifikasiController extends Controller
         $user = $request->user();
         $user->load('karyawan');
 
+        // Aturan yang sama dengan TicketController::show() — hanya
+        // IT/master-data atau pemilik tiket yang boleh melihat timeline.
+        $isOwner = $user->karyawan && $ticket->karyawan_id === $user->karyawan->id;
+        if (!$user->isIT('it-workflow') && !$user->canManageMaster('it-workflow') && !$isOwner) {
+            return response()->json(['message' => 'Anda tidak memiliki izin untuk melihat timeline tiket ini.'], 403);
+        }
+
         $logs = LogNotifikasi::query()
             ->where('ticket_id', $ticket->id)
             ->whereIn('action', [

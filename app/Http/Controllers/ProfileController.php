@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Http\Requests\ProfileUpdateRequest;
+use App\Models\Role;
 use App\Models\User;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Http\RedirectResponse;
@@ -66,12 +67,18 @@ class ProfileController extends Controller
         // Update user's FID
         $user->fid = $fid;
 
-        // Assign role automatically based on karyawan divisi if not set
+        // Belum punya role → antre sebagai "Menunggu Persetujuan";
+        // role sesuai divisi ditetapkan otomatis saat disetujui di
+        // Kelola Permintaan (assignRoleFromDivisi dari toggleAccess).
         if (!$user->role_id) {
-            $user->assignRoleFromDivisi();
+            $user->role_id = Role::where('name', 'Menunggu Persetujuan')->value('id');
         }
 
         $user->save();
+
+        // Pastikan baris permintaan akses (is_active=false) ada agar
+        // pengguna tampil di Kelola Permintaan.
+        $user->ensureUserApplications();
 
         // Reload the karyawan relation
         $user->load('karyawan');
@@ -95,7 +102,10 @@ class ProfileController extends Controller
         $user = $request->user();
         $oldPath = $user->avatar_path;
 
-        $filename = 'avatar_' . $user->id . '_' . time() . '.' . $request->file('avatar')->getClientOriginalExtension();
+        // Ekstensi dari isi file (bukan nama file klien) — mencegah
+        // ekstensi buatan penyerang ikut tersimpan di disk public.
+        $extension = $request->file('avatar')->guessExtension() ?: 'png';
+        $filename = 'avatar_' . $user->id . '_' . time() . '.' . $extension;
         $request->file('avatar')->storeAs('profile-photos', $filename, 'public');
         $newPath = 'profile-photos/' . $filename;
 
@@ -110,7 +120,7 @@ class ProfileController extends Controller
 
         return response()->json([
             'success'    => true,
-            'avatar_url' => asset($newPath),
+            'avatar_url' => asset('storage/' . $newPath),
         ]);
     }
 

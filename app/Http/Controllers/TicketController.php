@@ -551,7 +551,7 @@ class TicketController extends Controller
             ->map(function ($ticket) {
                 if ($ticket->adminIt && $ticket->adminIt->user) {
                     $ticket->adminIt->user->avatar_url = $ticket->adminIt->user->avatar_path
-                        ? asset($ticket->adminIt->user->avatar_path)
+                        ? asset('storage/' . $ticket->adminIt->user->avatar_path)
                         : null;
                 }
                 $ticket->append(['attachment_url', 'attachment_name']);
@@ -592,10 +592,18 @@ class TicketController extends Controller
             ->findOrFail($id);
 
         $user = $request->user();
+        $karyawan = $user->karyawan;
+
+        // Aturan yang sama dengan index(): hanya IT/master-data atau
+        // pemilik tiket yang boleh melihat detail.
+        $isOwner = $karyawan && $ticket->karyawan_id === $karyawan->id;
+        if (!$user->isIT('it-workflow') && !$user->canManageMaster('it-workflow') && !$isOwner) {
+            return response()->json(['message' => 'Anda tidak memiliki izin untuk melihat tiket ini.'], 403);
+        }
 
         if ($ticket->adminIt && $ticket->adminIt->user) {
             $ticket->adminIt->user->avatar_url = $ticket->adminIt->user->avatar_path
-                ? asset($ticket->adminIt->user->avatar_path)
+                ? asset('storage/' . $ticket->adminIt->user->avatar_path)
                 : null;
         }
 
