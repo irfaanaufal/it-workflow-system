@@ -101,9 +101,12 @@ DB::table('migrations')->count();                         // 37 (= jumlah file m
 - [ ] Buka detail + timeline tiket milik sendiri → 200.
       Buka tiket orang lain (akun lain) → **403** (uji IDOR: endpoint
       `/api/tickets/{id}` & `/api/tickets/{id}/timeline`).
-- [ ] **Registrasi**: daftar akun baru (nama = nama karyawan yang cocok)
-      → role `Menunggu Persetujuan` (bukan langsung IT/HRD) → muncul di
-      **Kelola Permintaan** → approve → role otomatis sesuai divisi.
+- [ ] **Registrasi & login**: daftar akun baru (nama = nama karyawan yang cocok)
+      → role `Menunggu Persetujuan` (bukan langsung IT/HRD), **belum ada baris
+      akses** → klik Masuk → modal *"Request ke IT Workflow telah diajukan
+      secara otomatis"* + **tepat 1 baris** `user_applications`
+      (it-workflow, inactive) muncul di **Kelola Permintaan** (bukan 4) →
+      approve → role otomatis sesuai divisi → Login kedua → dashboard.
 - [ ] **Lupa password**: email tak dikenal & email valid → pesan yang
       **sama** (tidak ada error "user tidak ditemukan").
 - [ ] `GET /it-system` tanpa slash → 301 → `/it-system/`.

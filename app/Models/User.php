@@ -107,31 +107,36 @@ class User extends Authenticatable
 
         if ($roleName) {
             $roleId = Role::where('name', $roleName)->value('id');
-            $apps = Application::all();
 
             if ($roleId) {
                 $this->role_id = $roleId;
                 $this->save();
 
-                foreach ($apps as $app) {
-                    UserApplication::updateOrCreate(
-                        ['user_id' => $this->id, 'application_id' => $app->id],
-                        ['role_id' => $roleId]
-                    );
-                }
+                // Sinkronkan role_id HANYA pada baris aplikasi yang sudah ada.
+                // Jangan membuat baris baru — permintaan akses sistem lain
+                // dibuat saat dibutuhkan, bukan sebagai efek samping approve.
+                UserApplication::where('user_id', $this->id)
+                    ->update(['role_id' => $roleId]);
             }
         }
     }
 
+    /**
+     * Pastikan ada tepat SATU baris permintaan akses (it-workflow).
+     * Sistem lain (Meeting/Reminder/Shortly) tidak ikut dibuat —
+     * lihat .agents/AGENTS.md (auto-request saat login pertama).
+     */
     public function ensureUserApplications(): void
     {
-        $apps = Application::all();
-        foreach ($apps as $app) {
-            UserApplication::updateOrCreate(
-                ['user_id' => $this->id, 'application_id' => $app->id],
-                ['role_id' => $this->role_id]
-            );
-        }
+        $app = Application::firstOrCreate(
+            ['slug' => 'it-workflow'],
+            ['name' => 'IT Workflow', 'description' => 'Sistem manajemen workflow teknologi informasi.']
+        );
+
+        UserApplication::firstOrCreate(
+            ['user_id' => $this->id, 'application_id' => $app->id],
+            ['role_id' => $this->role_id, 'is_active' => false]
+        );
     }
 
     public function logNotifikasi(): HasMany

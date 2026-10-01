@@ -69,10 +69,10 @@ class RegisteredUserController extends Controller
         $user->role_id = Role::where('name', 'Menunggu Persetujuan')->value('id');
         $user->save();
 
-        // Buat baris permintaan akses (is_active=false) agar langsung muncul
-        // di Kelola Permintaan. Role sesuai divisi baru ditetapkan otomatis
-        // saat IT menyetujui lewat toggleAccess (assignRoleFromDivisi).
-        $user->ensureUserApplications();
+        // Baris permintaan akses TIDAK dibuat di sini. Login pertama akan
+        // membuat tepat 1 baris it-workflow (is_active=false) + notifikasi
+        // ke IT (AuthenticatedSessionController). Saat disetujui, role
+        // sesuai divisi ditetapkan otomatis (assignRoleFromDivisi).
 
         event(new Registered($user));
 

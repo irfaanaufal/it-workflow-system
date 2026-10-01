@@ -76,9 +76,9 @@ class ProfileController extends Controller
 
         $user->save();
 
-        // Pastikan baris permintaan akses (is_active=false) ada agar
-        // pengguna tampil di Kelola Permintaan.
-        $user->ensureUserApplications();
+        // Baris permintaan akses TIDAK dibuat di sini — dibuat otomatis
+        // saat login pertama (AuthenticatedSessionController, 1 baris
+        // it-workflow saja; lihat .agents/AGENTS.md).
 
         // Reload the karyawan relation
         $user->load('karyawan');

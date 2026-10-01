@@ -32,7 +32,7 @@ class SecurityHardeningTest extends TestCase
     {
         // Nama cocok dengan karyawan ber-divisi IT — perilaku lama akan
         // langsung memberi role IT. Perilaku baru: role "Menunggu Persetujuan"
-        // + baris permintaan akses inactive.
+        // dan BELUM ada baris permintaan akses (dibuat saat login pertama).
         Karyawan::create([
             'fid' => 'F1001',
             'nama_karyawan' => 'Budi Santoso',
@@ -52,8 +52,61 @@ class SecurityHardeningTest extends TestCase
         $pendingId = Role::where('name', 'Menunggu Persetujuan')->value('id');
 
         $this->assertSame($pendingId, $user->role_id);
-        $this->assertGreaterThan(0, $user->userApplications()->count());
-        $this->assertSame(0, $user->userApplications()->where('is_active', true)->count());
+        // Registrasi TIDAK membuat baris akses — sistem lain (Meeting/
+        // Reminder/Shortly) tidak ikut; auto-request hanya saat login.
+        $this->assertSame(0, $user->userApplications()->count());
+    }
+
+    public function test_first_login_auto_creates_single_it_workflow_request(): void
+    {
+        Karyawan::create([
+            'fid' => 'F1010',
+            'nama_karyawan' => 'Sari Pending',
+            'divisi' => 'HRD',
+            'status' => 'Active',
+        ]);
+
+        $it = User::factory()->role('IT')->create();
+
+        $this->post('/register', [
+            'name' => 'Sari Pending',
+            'username' => 'sari.pending',
+            'email' => 'sari@example.com',
+            'password' => 'password',
+            'password_confirmation' => 'password',
+        ])->assertRedirect('/login');
+
+        // Login pertama → gate membuat TEPAT 1 baris it-workflow (inactive),
+        // memberi notifikasi ke IT, membatalkan sesi, dan menampilkan pesan.
+        $response = $this->post('/login', [
+            'username' => 'sari.pending',
+            'password' => 'password',
+        ]);
+
+        $response->assertSessionHasErrors('activation_needed');
+
+        $user = User::where('email', 'sari@example.com')->firstOrFail();
+
+        $this->assertSame(1, $user->userApplications()->count());
+        $userApp = $user->userApplications()->first();
+        $this->assertSame('it-workflow', $userApp->application->slug);
+        $this->assertFalse((bool) $userApp->is_active);
+        $this->assertSame($user->role_id, $userApp->role_id);
+
+        // Notifikasi "percobaan login user non-aktif" terkirim ke IT level 1.
+        $this->assertDatabaseHas('log_notifikasi', [
+            'actor_user_id' => $user->id,
+            'action' => 'activation_required',
+            'user_id' => $it->id,
+        ]);
+
+        // Login kedua (row sudah ada, masih inactive) → pesan kedua, tetap 1 row.
+        $this->post('/login', [
+            'username' => 'sari.pending',
+            'password' => 'password',
+        ])->assertSessionHasErrors('activation_needed');
+
+        $this->assertSame(1, $user->userApplications()->count());
     }
 
     public function test_approval_assigns_role_from_karyawan_divisi(): void
@@ -90,6 +143,10 @@ class SecurityHardeningTest extends TestCase
         $this->assertTrue($userApp->is_active);
         $this->assertSame(Role::where('name', 'QC')->value('id'), $user->role_id);
         $this->assertSame('QC', $user->role->name);
+
+        // Approve tidak membuat baris hantu untuk sistem lain —
+        // jumlah baris tetap 1 (hanya it-workflow).
+        $this->assertSame(1, $user->userApplications()->count());
     }
 
     public function test_ticket_detail_and_timeline_forbidden_for_unrelated_user(): void
