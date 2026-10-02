@@ -4,11 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\ProfileUpdateRequest;
 use App\Models\Role;
+use App\Models\Ticket;
 use App\Models\User;
-use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\Support\Facades\Storage;
@@ -22,9 +21,16 @@ class ProfileController extends Controller
      */
     public function edit(Request $request): Response
     {
+        $user = $request->user();
+        $base = Ticket::where('karyawan_id', $user->karyawan?->id);
+
         return Inertia::render('Profile/Edit', [
-            'mustVerifyEmail' => $request->user() instanceof MustVerifyEmail,
-            'status' => session('status'),
+            'stats' => [
+                'total' => (clone $base)->count(),
+                'proses' => (clone $base)->whereIn('status', ['inbox', 'review', 'to_do', 'in_progress', 'testing'])->count(),
+                'selesai' => (clone $base)->where('status', 'approved')->count(),
+                'ditolak' => (clone $base)->where('status', 'rejected')->count(),
+            ],
         ]);
     }
 
@@ -122,26 +128,5 @@ class ProfileController extends Controller
             'success'    => true,
             'avatar_url' => asset('storage/' . $newPath),
         ]);
-    }
-
-    /**
-     * Delete the user's account.
-     */
-    public function destroy(Request $request): RedirectResponse
-    {
-        $request->validate([
-            'password' => ['required', 'current_password'],
-        ]);
-
-        $user = $request->user();
-
-        Auth::logout();
-
-        $user->delete();
-
-        $request->session()->invalidate();
-        $request->session()->regenerateToken();
-
-        return Redirect::to('/');
     }
 }
