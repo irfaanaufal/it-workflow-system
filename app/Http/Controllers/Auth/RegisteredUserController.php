@@ -64,16 +64,19 @@ class RegisteredUserController extends Controller
             'remember_token' => \Illuminate\Support\Str::random(10),
         ]);
 
-        // role_id tidak fillable — set eksplisit: antre sebagai
-        // "Menunggu Persetujuan" sampai disetujui di Kelola Permintaan.
-        $user->role_id = Role::where('name', 'Menunggu Persetujuan')->value('id');
-        $user->save();
+        // Hanya sistem reminder yang bergerbang — role langsung ditentukan
+        // dari divisi karyawan. Divisi tak dikenal / bukan karyawan →
+        // fallback role "Menunggu Persetujuan" (terbatas, bukan gerbang).
+        $user->assignRoleFromDivisi();
 
-        // Aturan seragam lintas aplikasi: registrasi = 1 baris permintaan
-        // akses (it-workflow, is_active=false) + notifikasi admin.
-        // Aktivasi hanya via Kelola Permintaan (assignRoleFromDivisi).
+        if (!$user->role_id) {
+            $user->role_id = Role::where('name', 'Menunggu Persetujuan')->value('id');
+            $user->save();
+        }
+
+        // Tepat 1 baris it-workflow, langsung aktif — tanpa permintaan
+        // akses dan tanpa notifikasi (aktivasi hanya berlaku untuk reminder).
         $user->ensureUserApplications();
-        $user->sendAccessRequestNotifications();
 
         event(new Registered($user));
 

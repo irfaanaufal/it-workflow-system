@@ -122,7 +122,7 @@ Route::get('/dashboard', function () {
         'currentYear' => (int) date('Y'),
         'isIT' => $user->isIT('it-workflow'),
     ]);
-})->middleware(['auth', 'applications.access'])->name('dashboard');
+})->middleware(['auth'])->name('dashboard');
 
 Route::middleware(['auth', 'verified', 'manage.master'])->group(function () {
     Route::get('/admin/applications/requests', [ApplicationController::class, 'requests'])->name('admin.applications.requests');
@@ -134,7 +134,7 @@ Route::middleware(['auth', 'verified', 'manage.master'])->group(function () {
     Route::delete('/admin/applications/{id}', [ApplicationController::class, 'destroy'])->name('admin.applications.destroy');
 });
 
-Route::middleware(['auth', 'applications.access'])->group(function () {
+Route::middleware(['auth'])->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::post('/profile/link-fid', [ProfileController::class, 'linkFid'])

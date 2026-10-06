@@ -122,9 +122,9 @@ class User extends Authenticatable
     }
 
     /**
-     * Pastikan ada tepat SATU baris permintaan akses (it-workflow).
+     * Pastikan ada tepat SATU baris akses it-workflow, langsung aktif.
      * Sistem lain (Meeting/Reminder/Shortly) tidak ikut dibuat —
-     * lihat .agents/AGENTS.md (auto-request saat login pertama).
+     * lihat .agents/AGENTS.md (reminder = satu-satunya yang bergerbang).
      */
     public function ensureUserApplications(): void
     {
@@ -135,7 +135,7 @@ class User extends Authenticatable
 
         UserApplication::firstOrCreate(
             ['user_id' => $this->id, 'application_id' => $app->id],
-            ['role_id' => $this->role_id, 'is_active' => false]
+            ['role_id' => $this->role_id, 'is_active' => true]
         );
     }
 

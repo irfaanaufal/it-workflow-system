@@ -100,11 +100,24 @@ class LevelAccessTest extends TestCase
         $this->actingAs($user)->get('/admin/applications')->assertStatus($expected);
     }
 
-    public function test_user_without_role_and_without_active_access_is_forbidden(): void
+    public function test_user_without_role_can_open_basic_pages(): void
     {
+        // Gerbang dihapus — user tanpa role tetap bisa membuka halaman
+        // dasar (permission service fallback ke ['read']).
         $user = User::factory()->create();
 
-        $this->actingAs($user)->get('/my-requests')->assertStatus(403);
+        $this->actingAs($user)->get('/my-requests')->assertStatus(200);
+    }
+
+    public function test_pending_role_user_can_open_basic_pages(): void
+    {
+        // Populasi baru: role "Menunggu Persetujuan" (level 10) sekarang
+        // bisa login — halaman dasar wajib ter-render tanpa error.
+        $user = User::factory()->role('Menunggu Persetujuan')->create();
+
+        $this->actingAs($user)->get('/my-requests')->assertStatus(200);
+        $this->actingAs($user)->get('/profile')->assertStatus(200);
+        $this->actingAs($user)->get('/dashboard')->assertStatus(200);
     }
 
     #[DataProvider('rolesProvider')]
